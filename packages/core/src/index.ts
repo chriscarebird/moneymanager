@@ -46,15 +46,8 @@ export {
 
 // Calculations — rebalancing
 export type { RebalancingAction, RebalancingPlan } from './calculations/rebalancing.js';
-export {
-  computeRebalancingPlan,
-  getCurrentAllocations,
-} from './calculations/rebalancing.js';
+export { computeRebalancingPlan, getCurrentAllocations } from './calculations/rebalancing.js';
 
 // Calculations — fair use
 export type { FairUseStatus } from './calculations/fairuse.js';
-export {
-  checkFairUse,
-  optimiseTradeOrder,
-  calculateTotalFees,
-} from './calculations/fairuse.js';
+export { checkFairUse, optimiseTradeOrder, calculateTotalFees } from './calculations/fairuse.js';

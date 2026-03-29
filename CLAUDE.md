@@ -38,22 +38,26 @@ pnpm db:seed          # Seed with reference portfolio data
 ## Coding Conventions
 
 ### TypeScript
+
 - Strict mode everywhere — `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`
 - **No `any` types** — ESLint rule enforces this
 - Named exports only — no default exports anywhere
 - Use Zod for all runtime validation (API inputs, parsed data from Claude)
 
 ### Money Handling
+
 - All money values stored as **integers in cents** (smallest currency unit)
 - Examples: €137.28 → `13728`, $2,214 → `221400`
 - Never use floating point for financial calculations
 - Apply conversion only at the display layer
 
 ### Dates
+
 - All dates stored as **ISO 8601 strings in UTC**: `"2026-03-01T00:00:00Z"`
 - Use `new Date().toISOString()` for current timestamp
 
 ### API Design
+
 - All responses follow the envelope pattern:
   ```typescript
   { data: T | null; error: string | null; meta?: Record<string, unknown> }
@@ -61,6 +65,7 @@ pnpm db:seed          # Seed with reference portfolio data
 - Use `async/await` — no raw promises or `.then()` chains
 
 ### React
+
 - Functional components with hooks only — no class components
 - Named exports only
 - Keep components focused — extract logic to hooks
@@ -83,6 +88,7 @@ pnpm db:seed          # Seed with reference portfolio data
 ## Environment Variables
 
 See `.env.example` for all required variables. Key ones:
+
 - `ANTHROPIC_API_KEY` — Claude API key (server-side only)
 - `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` — Turso database
 - `USER1_PASSWORD` + `USER2_PASSWORD` — hashed passwords for 2 users

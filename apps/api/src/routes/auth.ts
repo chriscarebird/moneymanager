@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import type { AppVariables } from '../types.js';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import {
@@ -14,7 +15,7 @@ const loginSchema = z.object({
   password: z.string().min(1).max(200),
 });
 
-export const authRoutes = new Hono();
+export const authRoutes = new Hono<{ Variables: AppVariables }>();
 
 /**
  * POST /api/auth/login

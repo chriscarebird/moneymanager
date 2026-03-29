@@ -13,7 +13,7 @@ export type { Client };
  * const db = createDbClient(process.env.TURSO_DATABASE_URL, process.env.TURSO_AUTH_TOKEN);
  */
 export function createDbClient(url: string, authToken?: string): Client {
-  return createClient({ url, authToken });
+  return createClient({ url, ...(authToken !== undefined ? { authToken } : {}) });
 }
 
 // Schema info
@@ -22,6 +22,15 @@ export type { SchemaTable } from './schema.js';
 
 // Query helpers
 export { getUserById, updateUserSettings } from './queries/users.js';
-export { getSnapshots, getSnapshotWithHoldings, getLatestSnapshot, insertSnapshot } from './queries/portfolio.js';
+export {
+  getSnapshots,
+  getSnapshotWithHoldings,
+  getLatestSnapshot,
+  insertSnapshot,
+} from './queries/portfolio.js';
 export { getUberEquity, getRSUGrants, upsertUberEquity } from './queries/uber.js';
-export { getPendingNotifications, markNotificationSent, insertNotification } from './queries/notifications.js';
+export {
+  getPendingNotifications,
+  markNotificationSent,
+  insertNotification,
+} from './queries/notifications.js';

@@ -7,8 +7,9 @@ import { authRoutes } from './routes/auth.js';
 import { portfolioRoutes } from './routes/portfolio.js';
 import { adviceRoutes } from './routes/advice.js';
 import { uploadsRoutes } from './routes/uploads.js';
+import type { AppVariables } from './types.js';
 
-const app = new Hono();
+const app = new Hono<{ Variables: AppVariables }>();
 
 // ── Global middleware ────────────────────────────────────────────────────────
 

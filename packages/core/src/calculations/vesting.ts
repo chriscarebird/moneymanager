@@ -119,10 +119,7 @@ export function getVestedCount(grant: UberRSUGrant, asOfDate: string): number {
  * @param afterDate - ISO 8601 date — find next event after this date
  * @returns The next vesting event or null if fully vested
  */
-export function getNextVestingEvent(
-  grant: UberRSUGrant,
-  afterDate: string,
-): VestingEvent | null {
+export function getNextVestingEvent(grant: UberRSUGrant, afterDate: string): VestingEvent | null {
   // TODO Phase 1B: implement
   void grant;
   void afterDate;

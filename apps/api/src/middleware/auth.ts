@@ -1,4 +1,5 @@
 import { type Context, type Next } from 'hono';
+import type { AppVariables } from '../types.js';
 import { getCookie, setCookie } from 'hono/cookie';
 import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 import bcrypt from 'bcryptjs';
@@ -97,7 +98,7 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
 /**
  * Set the session cookie on the response.
  */
-export function setSessionCookie(c: Context, token: string): void {
+export function setSessionCookie(c: Context<{ Variables: AppVariables }>, token: string): void {
   setCookie(c, COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env['NODE_ENV'] === 'production',
@@ -110,7 +111,7 @@ export function setSessionCookie(c: Context, token: string): void {
 /**
  * Clear the session cookie.
  */
-export function clearSessionCookie(c: Context): void {
+export function clearSessionCookie(c: Context<{ Variables: AppVariables }>): void {
   setCookie(c, COOKIE_NAME, '', {
     httpOnly: true,
     secure: process.env['NODE_ENV'] === 'production',
@@ -124,7 +125,10 @@ export function clearSessionCookie(c: Context): void {
  * Hono middleware that requires a valid session.
  * Attaches the authenticated user to the context.
  */
-export async function requireAuth(c: Context, next: Next): Promise<Response | void> {
+export async function requireAuth(
+  c: Context<{ Variables: AppVariables }>,
+  next: Next,
+): Promise<Response | void> {
   const token = getCookie(c, COOKIE_NAME);
 
   if (!token) {
@@ -134,7 +138,10 @@ export async function requireAuth(c: Context, next: Next): Promise<Response | vo
   const session = await verifySessionToken(token);
   if (!session) {
     clearSessionCookie(c);
-    return c.json({ data: null, error: 'Unauthorized — invalid or expired session', meta: undefined }, 401);
+    return c.json(
+      { data: null, error: 'Unauthorized — invalid or expired session', meta: undefined },
+      401,
+    );
   }
 
   // Attach user to context variables

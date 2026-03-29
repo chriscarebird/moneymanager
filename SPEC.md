@@ -52,11 +52,17 @@ investpilot/
 ## Data Model
 
 ### User
+
 ```typescript
-{ id: string; name: string; settings: Record<string, unknown> }
+{
+  id: string;
+  name: string;
+  settings: Record<string, unknown>;
+}
 ```
 
 ### Portfolio_Snapshot
+
 ```typescript
 {
   id: string;
@@ -68,6 +74,7 @@ investpilot/
 ```
 
 ### Holding
+
 ```typescript
 {
   snapshot_id: string;
@@ -75,13 +82,14 @@ investpilot/
   name: string;
   isin: string;
   quantity: number;
-  price: number;   // integer cents
-  value: number;   // integer cents
+  price: number; // integer cents
+  value: number; // integer cents
   exchange: string;
 }
 ```
 
 ### Target_Allocation
+
 ```typescript
 {
   id: string;
@@ -96,6 +104,7 @@ investpilot/
 ```
 
 ### Uber_Equity
+
 ```typescript
 {
   type: 'RSU' | 'ESPP' | 'Direct_Shares';
@@ -107,6 +116,7 @@ investpilot/
 ```
 
 ### Uber_RSU_Grant
+
 ```typescript
 {
   grant_id: string;
@@ -120,13 +130,14 @@ investpilot/
 ```
 
 ### Pending_Transfer
+
 ```typescript
 {
   id: string;
   source: string;
   destination: string;
-  amount_usd: number | null;   // integer cents
-  amount_eur: number | null;   // integer cents
+  amount_usd: number | null; // integer cents
+  amount_eur: number | null; // integer cents
   fx_rate: number | null;
   status: 'pending' | 'completed';
   date_initiated: string; // ISO 8601
@@ -135,6 +146,7 @@ investpilot/
 ```
 
 ### Cash_Balance
+
 ```typescript
 {
   id: string;
@@ -146,6 +158,7 @@ investpilot/
 ```
 
 ### Transaction_History
+
 ```typescript
 {
   id: string;
@@ -153,13 +166,14 @@ investpilot/
   action: 'buy' | 'sell';
   asset: string;
   quantity: number;
-  price: number;  // integer cents
-  fee: number;    // integer cents
+  price: number; // integer cents
+  fee: number; // integer cents
   exchange: string;
 }
 ```
 
 ### Advice_Log
+
 ```typescript
 {
   id: string;
@@ -171,6 +185,7 @@ investpilot/
 ```
 
 ### Notification
+
 ```typescript
 {
   id: string;
@@ -182,6 +197,7 @@ investpilot/
 ```
 
 ### DeGiro_ETF_List
+
 ```typescript
 {
   isin: string;
@@ -194,6 +210,7 @@ investpilot/
 ```
 
 ### DeGiro_Monthly_Trade_Tracker
+
 ```typescript
 {
   id: string;
@@ -211,33 +228,33 @@ investpilot/
 
 ### DeGiro ETF Portfolio (~€24,300 EUR)
 
-| ETF | Symbol | ISIN | Qty | Price (€) | Value (€) |
-|-----|--------|------|-----|-----------|-----------|
-| Vanguard FTSE All-World UCITS | VWRL | IE00B3RBWM25 | 112 | 137.28 | 15,375 |
-| Vanguard S&P 500 UCITS | VUSA | IE00B3XXRP09 | 27 | 105.46 | 2,847 |
-| iShares MSCI World Small Cap | IUSN | IE00BF4RFH31 | 339 | 7.80 | 2,644 |
-| Vanguard Global Aggregate Bond | VAGE | IE00BG47KB92 | 59 | 20.40 | 1,204 |
-| iShares AEX UCITS (Dist) | IAEX | IE00B0M62Y33 | 12 | 95.77 | 1,149 |
-| Invesco EQQQ NASDAQ-100 | EQQQ | IE0032077012 | 2 | 490.10 | 980 |
-| BNPPE Bloomberg Europe Defensive | BJL8 | LU3047998896 | 10 | 10.41 | 104 |
+| ETF                              | Symbol | ISIN         | Qty | Price (€) | Value (€) |
+| -------------------------------- | ------ | ------------ | --- | --------- | --------- |
+| Vanguard FTSE All-World UCITS    | VWRL   | IE00B3RBWM25 | 112 | 137.28    | 15,375    |
+| Vanguard S&P 500 UCITS           | VUSA   | IE00B3XXRP09 | 27  | 105.46    | 2,847     |
+| iShares MSCI World Small Cap     | IUSN   | IE00BF4RFH31 | 339 | 7.80      | 2,644     |
+| Vanguard Global Aggregate Bond   | VAGE   | IE00BG47KB92 | 59  | 20.40     | 1,204     |
+| iShares AEX UCITS (Dist)         | IAEX   | IE00B0M62Y33 | 12  | 95.77     | 1,149     |
+| Invesco EQQQ NASDAQ-100          | EQQQ   | IE0032077012 | 2   | 490.10    | 980       |
+| BNPPE Bloomberg Europe Defensive | BJL8   | LU3047998896 | 10  | 10.41     | 104       |
 
 ### Morgan Stanley Uber Equity
 
-| Type | Shares | Value (USD) | Available to Transact |
-|------|--------|-------------|----------------------|
-| Direct Shares | 32 | $2,214 | 32 |
-| ESPP (non-qual) | 178 | $12,314 | 178 |
-| RSUs (unvested) | 335 | $23,175 | 0 |
-| Total | 545 | $37,703 | 210 |
+| Type            | Shares | Value (USD) | Available to Transact |
+| --------------- | ------ | ----------- | --------------------- |
+| Direct Shares   | 32     | $2,214      | 32                    |
+| ESPP (non-qual) | 178    | $12,314     | 178                   |
+| RSUs (unvested) | 335    | $23,175     | 0                     |
+| Total           | 545    | $37,703     | 210                   |
 
 ### Active RSU Grant
 
-| Field | Value |
-|-------|-------|
-| Grant ID | U121543 |
-| Total RSUs | 502 |
-| Vesting commencement | 2024-11-16 |
-| Formula | 3/48 at month 3, then 1/48 monthly |
+| Field                | Value                              |
+| -------------------- | ---------------------------------- |
+| Grant ID             | U121543                            |
+| Total RSUs           | 502                                |
+| Vesting commencement | 2024-11-16                         |
+| Formula              | 3/48 at month 3, then 1/48 monthly |
 
 ## Key Commands
 

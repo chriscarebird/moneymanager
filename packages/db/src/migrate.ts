@@ -23,7 +23,7 @@ async function runMigrations(): Promise<void> {
 
   console.warn('Connecting to database:', url);
 
-  const client = createClient({ url, authToken: authToken ?? undefined });
+  const client = createClient({ url, ...(authToken !== undefined ? { authToken } : {}) });
 
   // Ensure migrations table exists
   await client.execute(`
@@ -61,11 +61,16 @@ async function runMigrations(): Promise<void> {
     console.warn(`  ▶  Applying migration: ${file}`);
     const sql = readFileSync(resolve(migrationsDir, file), 'utf-8');
 
-    // Split on semicolons and execute each statement
-    const statements = sql
+    // Strip comment lines, split on semicolons, execute each statement
+    const stripped = sql
+      .split('\n')
+      .filter((line) => !line.trimStart().startsWith('--'))
+      .join('\n');
+
+    const statements = stripped
       .split(';')
       .map((s) => s.trim())
-      .filter((s) => s.length > 0 && !s.startsWith('--'));
+      .filter((s) => s.length > 0);
 
     for (const statement of statements) {
       await client.execute(statement);

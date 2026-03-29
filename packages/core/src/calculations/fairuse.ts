@@ -34,10 +34,7 @@ export interface FairUseStatus {
  * checkFairUse(tracker, '2026-03')
  * // => { hasFreeTrade: true, freeTradesUsed: 0, estimatedFeeCents: 0 }
  */
-export function checkFairUse(
-  tracker: DeGiroMonthlyTradeTracker,
-  month: string,
-): FairUseStatus {
+export function checkFairUse(tracker: DeGiroMonthlyTradeTracker, month: string): FairUseStatus {
   // TODO Phase 1B: implement
   void tracker;
   void month;
@@ -90,8 +87,6 @@ export function optimiseTradeOrder(
  * calculateTotalFees([{ feeCents: 0 }, { feeCents: 200 }])
  * // => 200
  */
-export function calculateTotalFees(
-  trades: Array<{ feeCents: number }>,
-): number {
+export function calculateTotalFees(trades: Array<{ feeCents: number }>): number {
   return trades.reduce((sum, t) => sum + t.feeCents, 0);
 }

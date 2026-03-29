@@ -135,9 +135,7 @@ function RouteContent({ route }: { route: Route }) {
       <div className="bg-slate-800 rounded-2xl p-12 max-w-lg w-full">
         <h2 className="text-2xl font-bold text-white mb-3">{page.title}</h2>
         <p className="text-slate-400">{page.description}</p>
-        <p className="text-slate-600 text-sm mt-6">
-          Phase 1A scaffold — implementation in Phase 3
-        </p>
+        <p className="text-slate-600 text-sm mt-6">Phase 1A scaffold — implementation in Phase 3</p>
       </div>
     </div>
   );

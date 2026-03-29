@@ -43,10 +43,7 @@ export async function getPendingNotifications(
  * @param client - libsql client
  * @param notificationId - Notification ID
  */
-export async function markNotificationSent(
-  client: Client,
-  notificationId: string,
-): Promise<void> {
+export async function markNotificationSent(client: Client, notificationId: string): Promise<void> {
   // TODO Phase 2: implement
   await client.execute({
     sql: 'UPDATE notifications SET sent = 1 WHERE id = ?',

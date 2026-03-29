@@ -18,7 +18,7 @@ export function getDbClient(): Client {
 
   _client = createClient({
     url,
-    authToken: authToken ?? undefined,
+    ...(authToken !== undefined ? { authToken } : {}),
   });
 
   return _client;

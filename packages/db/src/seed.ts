@@ -23,7 +23,7 @@ async function seed(): Promise<void> {
 
   console.warn('Seeding database:', url);
 
-  const client = createClient({ url, authToken: authToken ?? undefined });
+  const client = createClient({ url, ...(authToken !== undefined ? { authToken } : {}) });
 
   // ── Portfolio Snapshot: 2026-03-01 ────────────────────────────────────────
 
@@ -51,7 +51,7 @@ async function seed(): Promise<void> {
       name: 'Vanguard FTSE All-World UCITS ETF (Dist)',
       isin: 'IE00B3RBWM25',
       quantity: 112,
-      price_cents: 13728,   // €137.28
+      price_cents: 13728, // €137.28
       value_cents: 1537500, // €15,375 (112 × 137.28 ≈ 15,375)
       exchange: 'XETRA',
     },
@@ -60,7 +60,7 @@ async function seed(): Promise<void> {
       name: 'Vanguard S&P 500 UCITS ETF (Dist)',
       isin: 'IE00B3XXRP09',
       quantity: 27,
-      price_cents: 10546,  // €105.46
+      price_cents: 10546, // €105.46
       value_cents: 284700, // €2,847 (27 × 105.46 ≈ 2,847)
       exchange: 'XETRA',
     },
@@ -69,7 +69,7 @@ async function seed(): Promise<void> {
       name: 'iShares MSCI World Small Cap UCITS ETF',
       isin: 'IE00BF4RFH31',
       quantity: 339,
-      price_cents: 780,    // €7.80
+      price_cents: 780, // €7.80
       value_cents: 264400, // €2,644 (339 × 7.80 ≈ 2,644)
       exchange: 'XETRA',
     },
@@ -78,7 +78,7 @@ async function seed(): Promise<void> {
       name: 'Vanguard Global Aggregate Bond UCITS ETF',
       isin: 'IE00BG47KB92',
       quantity: 59,
-      price_cents: 2040,   // €20.40
+      price_cents: 2040, // €20.40
       value_cents: 120400, // €1,204 (59 × 20.40 ≈ 1,204)
       exchange: 'XETRA',
     },
@@ -87,7 +87,7 @@ async function seed(): Promise<void> {
       name: 'iShares AEX UCITS ETF (Dist)',
       isin: 'IE00B0M62Y33',
       quantity: 12,
-      price_cents: 9577,   // €95.77
+      price_cents: 9577, // €95.77
       value_cents: 114900, // €1,149 (12 × 95.77 ≈ 1,149)
       exchange: 'AEX',
     },
@@ -96,8 +96,8 @@ async function seed(): Promise<void> {
       name: 'Invesco EQQQ NASDAQ-100 UCITS ETF',
       isin: 'IE0032077012',
       quantity: 2,
-      price_cents: 49010,  // €490.10
-      value_cents: 98000,  // €980 (2 × 490.10 ≈ 980)
+      price_cents: 49010, // €490.10
+      value_cents: 98000, // €980 (2 × 490.10 ≈ 980)
       exchange: 'XETRA',
     },
     {
@@ -105,8 +105,8 @@ async function seed(): Promise<void> {
       name: 'BNP Paribas Easy Bloomberg Europe Defensive',
       isin: 'LU3047998896',
       quantity: 10,
-      price_cents: 1041,   // €10.41
-      value_cents: 10400,  // €104 (10 × 10.41 ≈ 104)
+      price_cents: 1041, // €10.41
+      value_cents: 10400, // €104 (10 × 10.41 ≈ 104)
       exchange: 'XETRA',
     },
   ] as const;
@@ -128,19 +128,56 @@ async function seed(): Promise<void> {
         holding.exchange,
       ],
     });
-    console.warn(`    + ${holding.name} (${holding.isin}): ${holding.quantity} shares @ €${(holding.price_cents / 100).toFixed(2)}`);
+    console.warn(
+      `    + ${holding.name} (${holding.isin}): ${holding.quantity} shares @ €${(holding.price_cents / 100).toFixed(2)}`,
+    );
   }
 
   // ── DeGiro ETF reference data ─────────────────────────────────────────────
 
   const etfListEntries = [
-    { isin: 'IE00B3RBWM25', name: 'Vanguard FTSE All-World UCITS ETF (VWRL)', exchange: 'XETRA', is_core: 1 },
-    { isin: 'IE00B3XXRP09', name: 'Vanguard S&P 500 UCITS ETF (VUSA)', exchange: 'XETRA', is_core: 1 },
-    { isin: 'IE00BF4RFH31', name: 'iShares MSCI World Small Cap UCITS ETF (IUSN)', exchange: 'XETRA', is_core: 1 },
-    { isin: 'IE00BG47KB92', name: 'Vanguard Global Aggregate Bond UCITS ETF (VAGE)', exchange: 'XETRA', is_core: 1 },
-    { isin: 'IE00B0M62Y33', name: 'iShares AEX UCITS ETF Dist (IAEX)', exchange: 'AEX', is_core: 0 },
-    { isin: 'IE0032077012', name: 'Invesco EQQQ NASDAQ-100 UCITS ETF (EQQQ)', exchange: 'XETRA', is_core: 0 },
-    { isin: 'LU3047998896', name: 'BNP Paribas Easy Bloomberg Europe Defensive (BJL8)', exchange: 'XETRA', is_core: 0 },
+    {
+      isin: 'IE00B3RBWM25',
+      name: 'Vanguard FTSE All-World UCITS ETF (VWRL)',
+      exchange: 'XETRA',
+      is_core: 1,
+    },
+    {
+      isin: 'IE00B3XXRP09',
+      name: 'Vanguard S&P 500 UCITS ETF (VUSA)',
+      exchange: 'XETRA',
+      is_core: 1,
+    },
+    {
+      isin: 'IE00BF4RFH31',
+      name: 'iShares MSCI World Small Cap UCITS ETF (IUSN)',
+      exchange: 'XETRA',
+      is_core: 1,
+    },
+    {
+      isin: 'IE00BG47KB92',
+      name: 'Vanguard Global Aggregate Bond UCITS ETF (VAGE)',
+      exchange: 'XETRA',
+      is_core: 1,
+    },
+    {
+      isin: 'IE00B0M62Y33',
+      name: 'iShares AEX UCITS ETF Dist (IAEX)',
+      exchange: 'AEX',
+      is_core: 0,
+    },
+    {
+      isin: 'IE0032077012',
+      name: 'Invesco EQQQ NASDAQ-100 UCITS ETF (EQQQ)',
+      exchange: 'XETRA',
+      is_core: 0,
+    },
+    {
+      isin: 'LU3047998896',
+      name: 'BNP Paribas Easy Bloomberg Europe Defensive (BJL8)',
+      exchange: 'XETRA',
+      is_core: 0,
+    },
   ] as const;
 
   for (const etf of etfListEntries) {
@@ -163,7 +200,7 @@ async function seed(): Promise<void> {
       type: 'Direct_Shares',
       shares_held: 32,
       shares_available: 32,
-      market_value_usd_cents: 221400,  // $2,214
+      market_value_usd_cents: 221400, // $2,214
       holding_period_active: 0,
     },
     {
@@ -176,7 +213,7 @@ async function seed(): Promise<void> {
     {
       type: 'RSU',
       shares_held: 335,
-      shares_available: 0,             // unvested, cannot transact
+      shares_available: 0, // unvested, cannot transact
       market_value_usd_cents: 2317500, // $23,175
       holding_period_active: 0,
     },
@@ -198,7 +235,9 @@ async function seed(): Promise<void> {
         equity.holding_period_active,
       ],
     });
-    console.warn(`    + Uber ${equity.type}: ${equity.shares_held} shares @ $${(equity.market_value_usd_cents / 100).toFixed(0)}`);
+    console.warn(
+      `    + Uber ${equity.type}: ${equity.shares_held} shares @ $${(equity.market_value_usd_cents / 100).toFixed(0)}`,
+    );
   }
 
   // ── Uber RSU Grant U121543 ────────────────────────────────────────────────
@@ -213,9 +252,9 @@ async function seed(): Promise<void> {
       'U121543',
       userId,
       502,
-      '2024-11-16T00:00:00Z',   // 16-Nov-2024 vesting commencement
+      '2024-11-16T00:00:00Z', // 16-Nov-2024 vesting commencement
       '3/48 at month 3, then 1/48 monthly',
-      '2024-11-16T00:00:00Z',   // grant date (same as commencement for this grant)
+      '2024-11-16T00:00:00Z', // grant date (same as commencement for this grant)
       'active',
     ],
   });
