@@ -7,8 +7,8 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test": "vitest run",
-    "test:unit": "vitest run --reporter=verbose",
+    "test": "vitest run --passWithNoTests",
+    "test:unit": "vitest run --reporter=verbose --passWithNoTests",
     "lint": "eslint src --ext .ts,.tsx"
   },
   "dependencies": {

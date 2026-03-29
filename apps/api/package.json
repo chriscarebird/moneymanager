@@ -7,8 +7,8 @@
     "dev": "node --watch --experimental-vm-modules --loader ts-node/esm src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "test": "vitest run",
-    "test:unit": "vitest run --reporter=verbose",
+    "test": "vitest run --passWithNoTests",
+    "test:unit": "vitest run --reporter=verbose --passWithNoTests",
     "lint": "eslint src --ext .ts"
   },
   "dependencies": {

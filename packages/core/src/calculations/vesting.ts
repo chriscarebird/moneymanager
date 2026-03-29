@@ -1,127 +1,167 @@
 import type { UberRSUGrant } from '../types/index.js';
 
-/**
- * Represents a single vesting event.
- */
+/** A single vesting event. */
 export interface VestingEvent {
-  /** Date when shares vest */
-  date: string; // ISO 8601
-  /** Number of RSUs vesting on this date */
+  /** ISO 8601 date when shares vest */
+  date: string;
+  /** Shares vesting on this date */
   sharesVesting: number;
   /** Running cumulative total vested after this event */
   cumulativeVested: number;
-  /** Whether this event is in the future (not yet vested) */
+  /** True if this event is in the future (not yet vested) */
   isFuture: boolean;
 }
 
-/**
- * Result of computing a full vesting schedule.
- */
+/** Full computed vesting schedule for one RSU grant. */
 export interface VestingSchedule {
   grantId: string;
   totalRsus: number;
   vestedToDate: number;
   unvestedToDate: number;
-  nextVestingDate: string | null; // ISO 8601
+  /** ISO 8601, or null if fully vested */
+  nextVestingDate: string | null;
   nextVestingShares: number;
   events: VestingEvent[];
 }
 
-/**
- * Parse the vesting formula string into cliff and monthly parameters.
- *
- * Supported format: "3/48 at month 3, then 1/48 monthly"
- *   - cliff: 3/48 shares vest at month 3
- *   - monthly: 1/48 shares vest each month thereafter
- *
- * @param formula - Vesting formula string from UberRSUGrant
- * @param totalRsus - Total RSUs in the grant
- * @returns Parsed vesting parameters
- *
- * @example
- * parseVestingFormula("3/48 at month 3, then 1/48 monthly", 480)
- * // => { cliffNumerator: 3, cliffDenominator: 48, cliffMonth: 3,
- * //       monthlyNumerator: 1, monthlyDenominator: 48 }
- */
-export function parseVestingFormula(
-  formula: string,
-  totalRsus: number,
-): {
-  cliffShares: number;
+/** Parsed parameters extracted from a vesting formula string. */
+export interface VestingFormulaParams {
+  /** Month offset from commencement when cliff vests (e.g. 3) */
   cliffMonthOffset: number;
-  monthlyShares: number;
-  totalMonths: number;
-} {
-  // TODO Phase 1B: implement full formula parser
-  // For now, hardcode the standard Uber formula: 3/48 cliff + 1/48 monthly
-  const cliffFraction = 3 / 48;
-  const monthlyFraction = 1 / 48;
-  const cliffShares = Math.floor(totalRsus * cliffFraction);
-  const monthlyShares = Math.floor(totalRsus * monthlyFraction);
-
-  void formula; // will be parsed in Phase 1B
-  return {
-    cliffShares,
-    cliffMonthOffset: 3,
-    monthlyShares,
-    totalMonths: 48,
-  };
+  /** Total vesting period in months (denominator, e.g. 48) */
+  denominator: number;
 }
 
 /**
- * Compute the full vesting schedule for an RSU grant.
+ * Parse the vesting formula string into cliff and period parameters.
  *
- * Uber standard formula: 3/48 cliff at month 3, then 1/48 monthly.
- * All computations use integer arithmetic to avoid floating point errors.
+ * Supported format: "3/48 at month 3, then 1/48 monthly"
  *
- * @param grant - The RSU grant
- * @param asOfDate - ISO 8601 date to compute vested/unvested counts (defaults to today)
- * @returns Full vesting schedule with individual events
+ * @throws if the formula string cannot be parsed
+ */
+export function parseVestingFormula(formula: string): VestingFormulaParams {
+  const match = formula.match(/^(\d+)\/(\d+)\s+at\s+month\s+(\d+)/i);
+  if (!match) {
+    throw new Error(`Unrecognised vesting formula: "${formula}"`);
+  }
+  const denominator = parseInt(match[2], 10);
+  const cliffMonthOffset = parseInt(match[3], 10);
+  return { cliffMonthOffset, denominator };
+}
+
+/**
+ * Add a whole number of calendar months to a UTC date, preserving the day.
+ * If the resulting month is shorter, clamps to the last valid day
+ * (e.g. Jan 31 + 1 month → Feb 28).
+ */
+export function addCalendarMonths(date: Date, months: number): Date {
+  const originalDay = date.getUTCDate();
+  const result = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + months, originalDay),
+  );
+  // If the day overflowed (e.g. Mar 31 → "Apr 31" → May 1), roll back
+  if (result.getUTCDate() !== originalDay) {
+    result.setUTCDate(0); // last day of the previous month
+  }
+  return result;
+}
+
+/**
+ * Compute the full vesting schedule for a single RSU grant.
  *
- * @example
- * computeVestingSchedule(grant, '2026-03-01')
- * // => { grantId: 'U121543', vestedToDate: 83, unvestedToDate: 419, ... }
+ * Uses the cumulative floor approach:
+ *   cumulative(month) = floor(totalRsus × month / denominator)
+ *   sharesVesting(month) = cumulative(month) − cumulative(month − 1)
+ *
+ * This guarantees the total of all events equals totalRsus exactly —
+ * any rounding remainder is absorbed into later monthly events.
+ *
+ * @param grant - The RSU grant to compute
+ * @param asOfDate - ISO 8601 reference date for isFuture / vestedToDate
+ *   (defaults to today in UTC)
  */
 export function computeVestingSchedule(grant: UberRSUGrant, asOfDate?: string): VestingSchedule {
-  // TODO Phase 1B: implement full vesting schedule computation
-  void asOfDate;
-  const parsed = parseVestingFormula(grant.vestingFormula, grant.totalRsus);
+  const { cliffMonthOffset, denominator } = parseVestingFormula(grant.vestingFormula);
+  const commencement = new Date(grant.vestingCommencementDate);
+  const asOf = asOfDate ? new Date(asOfDate) : new Date();
+
+  const events: VestingEvent[] = [];
+  let prevCumulative = 0;
+  let vestedToDate = 0;
+  let nextVestingDate: string | null = null;
+  let nextVestingShares = 0;
+
+  for (let month = cliffMonthOffset; month <= denominator; month++) {
+    const cumulative = Math.floor((grant.totalRsus * month) / denominator);
+    const sharesVesting = cumulative - prevCumulative;
+    prevCumulative = cumulative;
+
+    if (sharesVesting <= 0) continue;
+
+    const vestDate = addCalendarMonths(commencement, month);
+    const isFuture = vestDate > asOf;
+
+    events.push({
+      date: vestDate.toISOString(),
+      sharesVesting,
+      cumulativeVested: cumulative,
+      isFuture,
+    });
+
+    if (!isFuture) {
+      vestedToDate = cumulative;
+    } else if (nextVestingDate === null) {
+      nextVestingDate = vestDate.toISOString();
+      nextVestingShares = sharesVesting;
+    }
+  }
 
   return {
     grantId: grant.grantId,
     totalRsus: grant.totalRsus,
-    vestedToDate: 0, // Phase 1B
-    unvestedToDate: grant.totalRsus, // Phase 1B
-    nextVestingDate: null, // Phase 1B
-    nextVestingShares: parsed.monthlyShares,
-    events: [], // Phase 1B
+    vestedToDate,
+    unvestedToDate: grant.totalRsus - vestedToDate,
+    nextVestingDate,
+    nextVestingShares,
+    events,
   };
 }
 
 /**
- * Calculate how many RSUs have vested as of a given date.
- *
- * @param grant - The RSU grant
- * @param asOfDate - ISO 8601 date to check
- * @returns Number of RSUs vested as of that date
+ * Stack multiple RSU grant schedules into a single merged, date-sorted timeline.
+ * Events on the same date from different grants are combined into one entry.
  */
-export function getVestedCount(grant: UberRSUGrant, asOfDate: string): number {
-  // TODO Phase 1B: implement
-  void grant;
-  void asOfDate;
-  return 0;
+export function stackVestingSchedules(schedules: VestingSchedule[]): VestingEvent[] {
+  const byDate = new Map<string, VestingEvent>();
+
+  for (const schedule of schedules) {
+    for (const event of schedule.events) {
+      // Normalise to YYYY-MM-DD for grouping
+      const key = event.date.slice(0, 10);
+      const existing = byDate.get(key);
+      if (existing) {
+        existing.sharesVesting += event.sharesVesting;
+        existing.cumulativeVested += event.sharesVesting;
+      } else {
+        byDate.set(key, { ...event });
+      }
+    }
+  }
+
+  return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
 }
 
 /**
- * Get the next vesting event after a given date.
- *
- * @param grant - The RSU grant
- * @param afterDate - ISO 8601 date — find next event after this date
- * @returns The next vesting event or null if fully vested
+ * Return how many RSUs have vested from a grant as of a given date.
+ */
+export function getVestedCount(grant: UberRSUGrant, asOfDate: string): number {
+  return computeVestingSchedule(grant, asOfDate).vestedToDate;
+}
+
+/**
+ * Return the next vesting event after a given date, or null if fully vested.
  */
 export function getNextVestingEvent(grant: UberRSUGrant, afterDate: string): VestingEvent | null {
-  // TODO Phase 1B: implement
-  void grant;
-  void afterDate;
-  return null;
+  const schedule = computeVestingSchedule(grant, afterDate);
+  return schedule.events.find((e) => e.isFuture) ?? null;
 }
