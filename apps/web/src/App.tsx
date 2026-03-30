@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { UploadFlow } from './components/upload/UploadFlow.js';
 
 /**
  * InvestPilot App Shell
@@ -13,7 +14,7 @@ import { useState } from 'react';
  *   /settings   → App settings
  */
 
-type Route = 'login' | 'dashboard' | 'portfolio' | 'equity' | 'advice' | 'settings';
+type Route = 'login' | 'dashboard' | 'portfolio' | 'equity' | 'upload' | 'advice' | 'settings';
 
 export function App() {
   const [currentRoute, setCurrentRoute] = useState<Route>('login');
@@ -73,7 +74,7 @@ export function App() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <h1 className="text-xl font-bold text-white">InvestPilot</h1>
           <div className="flex gap-4">
-            {(['dashboard', 'portfolio', 'equity', 'advice', 'settings'] as Route[]).map(
+            {(['dashboard', 'portfolio', 'equity', 'upload', 'advice', 'settings'] as Route[]).map(
               (route) => (
                 <button
                   key={route}
@@ -110,7 +111,11 @@ export function App() {
 }
 
 function RouteContent({ route }: { route: Route }) {
-  const placeholders: Record<Route, { title: string; description: string }> = {
+  if (route === 'upload') {
+    return <UploadFlow />;
+  }
+
+  const placeholders: Record<Exclude<Route, 'upload'>, { title: string; description: string }> = {
     login: { title: 'Login', description: 'Authentication screen' },
     dashboard: {
       title: 'Dashboard',

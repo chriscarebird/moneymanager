@@ -28,7 +28,7 @@ export {
   getLatestSnapshot,
   insertSnapshot,
 } from './queries/portfolio.js';
-export { getUberEquity, getRSUGrants, upsertUberEquity } from './queries/uber.js';
+export { getUberEquity, getRSUGrants, upsertUberEquity, upsertRSUGrant } from './queries/uber.js';
 export {
   getPendingNotifications,
   markNotificationSent,
