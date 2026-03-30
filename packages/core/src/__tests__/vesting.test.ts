@@ -76,7 +76,7 @@ describe('computeVestingSchedule — cliff event', () => {
     // As of one day before cliff, nothing has vested
     const schedule = computeVestingSchedule(GRANT_U121543, '2025-02-15T00:00:00.000Z');
     expect(schedule.vestedToDate).toBe(0);
-    const firstEvent = schedule.events[0];
+    const firstEvent = schedule.events[0]!;
     expect(firstEvent.sharesVesting).toBe(31); // floor(502 × 3/48) = 31
     expect(firstEvent.date.startsWith('2025-02-16')).toBe(true);
     expect(firstEvent.isFuture).toBe(true);
@@ -85,7 +85,7 @@ describe('computeVestingSchedule — cliff event', () => {
   it('cliff is vested as of 16-Feb-2025 exactly', () => {
     const schedule = computeVestingSchedule(GRANT_U121543, '2025-02-16T00:00:00.000Z');
     expect(schedule.vestedToDate).toBe(31);
-    const firstEvent = schedule.events[0];
+    const firstEvent = schedule.events[0]!;
     expect(firstEvent.isFuture).toBe(false);
   });
 });
@@ -204,7 +204,7 @@ describe('stackVestingSchedules', () => {
     const s1 = computeVestingSchedule(GRANT_U121543, '2030-01-01T00:00:00.000Z');
     const stacked = stackVestingSchedules([s1]);
     for (let i = 1; i < stacked.length; i++) {
-      expect(stacked[i].date >= stacked[i - 1].date).toBe(true);
+      expect(stacked[i]!.date >= stacked[i - 1]!.date).toBe(true);
     }
   });
 });

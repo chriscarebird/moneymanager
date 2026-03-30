@@ -172,9 +172,9 @@ describe('projectConcentrations', () => {
       '2026-03-01T00:00:00.000Z',
     );
     expect(projections).toHaveLength(3);
-    expect(projections[0].monthsFromNow).toBe(3);
-    expect(projections[1].monthsFromNow).toBe(6);
-    expect(projections[2].monthsFromNow).toBe(12);
+    expect(projections[0]!.monthsFromNow).toBe(3);
+    expect(projections[1]!.monthsFromNow).toBe(6);
+    expect(projections[2]!.monthsFromNow).toBe(12);
   });
 
   it('Uber concentration increases with each monthly vest (no selling assumed)', () => {
@@ -187,8 +187,8 @@ describe('projectConcentrations', () => {
       '2026-03-01T00:00:00.000Z',
     );
     // Concentration should grow over time as vesting adds Uber value
-    expect(projections[1].projectedUberPct).toBeGreaterThan(projections[0].projectedUberPct);
-    expect(projections[2].projectedUberPct).toBeGreaterThan(projections[1].projectedUberPct);
+    expect(projections[1]!.projectedUberPct).toBeGreaterThan(projections[0]!.projectedUberPct);
+    expect(projections[2]!.projectedUberPct).toBeGreaterThan(projections[1]!.projectedUberPct);
   });
 
   it('additional shares vest between now and 3-month projection', () => {
@@ -201,8 +201,8 @@ describe('projectConcentrations', () => {
       '2026-03-01T00:00:00.000Z',
     );
     // From Mar-2026 to Jun-2026: ~3 monthly vests of ~10-11 shares each
-    expect(projections[0].additionalSharesVested).toBeGreaterThan(0);
-    expect(projections[0].additionalSharesVested).toBeLessThanOrEqual(40); // 3 months × ~11 shares
+    expect(projections[0]!.additionalSharesVested).toBeGreaterThan(0);
+    expect(projections[0]!.additionalSharesVested).toBeLessThanOrEqual(40); // 3 months × ~11 shares
   });
 
   it('accepts custom projection months', () => {
@@ -216,7 +216,7 @@ describe('projectConcentrations', () => {
       [1, 2],
     );
     expect(projections).toHaveLength(2);
-    expect(projections[0].monthsFromNow).toBe(1);
-    expect(projections[1].monthsFromNow).toBe(2);
+    expect(projections[0]!.monthsFromNow).toBe(1);
+    expect(projections[1]!.monthsFromNow).toBe(2);
   });
 });

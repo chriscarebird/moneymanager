@@ -67,6 +67,45 @@ export async function getRSUGrants(client: Client, userId: string): Promise<Uber
 }
 
 /**
+ * Upsert an RSU grant (insert or update by grant_id).
+ *
+ * @param client - libsql client
+ * @param userId - User ID
+ * @param grant - RSU grant to upsert
+ */
+export async function upsertRSUGrant(
+  client: Client,
+  userId: string,
+  grant: UberRSUGrant,
+): Promise<void> {
+  await client.execute({
+    sql: `
+      INSERT INTO uber_rsu_grants
+        (grant_id, user_id, total_rsus, vesting_commencement_date,
+         vesting_formula, date_of_grant, source_document_url, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT (grant_id) DO UPDATE SET
+        total_rsus = excluded.total_rsus,
+        vesting_commencement_date = excluded.vesting_commencement_date,
+        vesting_formula = excluded.vesting_formula,
+        date_of_grant = excluded.date_of_grant,
+        source_document_url = COALESCE(excluded.source_document_url, source_document_url),
+        status = excluded.status
+    `,
+    args: [
+      grant.grantId,
+      userId,
+      grant.totalRsus,
+      grant.vestingCommencementDate,
+      grant.vestingFormula,
+      grant.dateOfGrant,
+      grant.sourceDocumentUrl ?? null,
+      grant.status,
+    ],
+  });
+}
+
+/**
  * Upsert Uber equity position (insert or update by user + type).
  *
  * @param client - libsql client

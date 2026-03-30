@@ -29,13 +29,15 @@ export function getAnthropicClient(): Anthropic {
 }
 
 /**
- * Default model to use for InvestPilot AI features.
- * claude-sonnet is a good balance of capability and cost for financial analysis.
+ * Cost-efficient model for parsing tasks (vision, document extraction).
  */
-export const DEFAULT_MODEL = 'claude-opus-4-5' as const;
+export const SONNET_MODEL = 'claude-sonnet-4-6' as const;
 
 /**
- * Model to use for screenshot/document parsing tasks.
- * claude-sonnet has vision capability for parsing portfolio screenshots.
+ * Highest quality model for strategy and advisory tasks.
  */
-export const VISION_MODEL = 'claude-opus-4-5' as const;
+export const OPUS_MODEL = 'claude-opus-4-6' as const;
+
+// Backward compat aliases
+export const DEFAULT_MODEL = SONNET_MODEL;
+export const VISION_MODEL = SONNET_MODEL;

@@ -199,8 +199,8 @@ describe('annotateTradeFees', () => {
       { isin: ISIN_VUSA, direction: 'buy' as const, amountCents: 150_000 },
     ];
     const result = annotateTradeFees(trades, trackers, MONTH);
-    expect(result[0].isFree).toBe(true);
-    expect(result[1].isFree).toBe(true);
+    expect(result[0]!.isFree).toBe(true);
+    expect(result[1]!.isFree).toBe(true);
     expect(calculateTotalFees(result)).toBe(0);
   });
 
@@ -212,8 +212,8 @@ describe('annotateTradeFees', () => {
       { isin: ISIN_VWRL, direction: 'buy' as const, amountCents: 50_000 }, // sub-€1,000
     ];
     const result = annotateTradeFees(trades, trackers, MONTH);
-    expect(result[0].isFree).toBe(false);
-    expect(result[0].feeCents).toBe(CHARGED_FEE_CENTS);
+    expect(result[0]!.isFree).toBe(false);
+    expect(result[0]!.feeCents).toBe(CHARGED_FEE_CENTS);
   });
 });
 
@@ -232,7 +232,7 @@ describe('optimiseTradeOrder', () => {
     ];
     const result = optimiseTradeOrder(trades, trackers, MONTH);
     // VUSA (free) should come first in optimal order
-    expect(result[0].isin).toBe(ISIN_VUSA);
+    expect(result[0]!.isin).toBe(ISIN_VUSA);
   });
 
   it('preserves all trades in the output', () => {

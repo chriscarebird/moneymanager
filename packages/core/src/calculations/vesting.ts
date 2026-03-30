@@ -44,8 +44,8 @@ export function parseVestingFormula(formula: string): VestingFormulaParams {
   if (!match) {
     throw new Error(`Unrecognised vesting formula: "${formula}"`);
   }
-  const denominator = parseInt(match[2], 10);
-  const cliffMonthOffset = parseInt(match[3], 10);
+  const denominator = parseInt(match[2]!, 10);
+  const cliffMonthOffset = parseInt(match[3]!, 10);
   return { cliffMonthOffset, denominator };
 }
 
