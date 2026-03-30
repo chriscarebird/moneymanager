@@ -7,6 +7,7 @@ import { authRoutes } from './routes/auth.js';
 import { portfolioRoutes } from './routes/portfolio.js';
 import { adviceRoutes } from './routes/advice.js';
 import { uploadsRoutes } from './routes/uploads.js';
+import { settingsRoutes } from './routes/settings.js';
 import type { AppVariables } from './types.js';
 
 const app = new Hono<{ Variables: AppVariables }>();
@@ -48,10 +49,12 @@ app.route('/api/auth', authRoutes);
 app.use('/api/portfolio/*', requireAuth);
 app.use('/api/advice/*', requireAuth);
 app.use('/api/uploads/*', requireAuth);
+app.use('/api/settings/*', requireAuth);
 
 app.route('/api/portfolio', portfolioRoutes);
 app.route('/api/advice', adviceRoutes);
 app.route('/api/uploads', uploadsRoutes);
+app.route('/api/settings', settingsRoutes);
 
 // ── 404 handler ──────────────────────────────────────────────────────────────
 

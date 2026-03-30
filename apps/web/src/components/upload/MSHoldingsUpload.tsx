@@ -31,7 +31,9 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-export function MSHoldingsUpload() {
+type Props = { onSaved?: () => void };
+
+export function MSHoldingsUpload({ onSaved }: Props) {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [parsed, setParsed] = useState<ParsedMSHoldings | null>(null);
@@ -91,6 +93,7 @@ export function MSHoldingsUpload() {
       setMessage(`Saved ${json.data?.saved ?? 0} equity position(s) successfully.`);
       setParsed(null);
       setEquity([]);
+      onSaved?.();
     } catch (err) {
       setStatus('error');
       setMessage(err instanceof Error ? err.message : 'Failed to save');

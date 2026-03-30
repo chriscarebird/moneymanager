@@ -23,7 +23,9 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-export function RSUGrantUpload() {
+type Props = { onSaved?: () => void };
+
+export function RSUGrantUpload({ onSaved }: Props) {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [parsed, setParsed] = useState<ParsedRSUGrant | null>(null);
@@ -93,6 +95,7 @@ export function RSUGrantUpload() {
       setMessage(`RSU grant ${json.data?.grantId ?? ''} saved successfully.`);
       setParsed(null);
       setGrant(null);
+      onSaved?.();
     } catch (err) {
       setStatus('error');
       setMessage(err instanceof Error ? err.message : 'Failed to save');

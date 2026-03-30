@@ -34,3 +34,9 @@ export {
   markNotificationSent,
   insertNotification,
 } from './queries/notifications.js';
+export {
+  getTargetAllocations,
+  upsertTargetAllocation,
+  deleteTargetAllocation,
+} from './queries/allocations.js';
+export { getCashBalance, setCashBalance } from './queries/cash.js';

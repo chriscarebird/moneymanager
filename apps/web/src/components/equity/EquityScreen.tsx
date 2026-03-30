@@ -1,0 +1,159 @@
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import type { UberEquity, UberRSUGrant } from '../../lib/api.js';
+import { formatUsd, DEFAULT_FX_RATE } from '../../lib/calc.js';
+
+type Props = {
+  equity: UberEquity[];
+  grants: UberRSUGrant[];
+  loading: boolean;
+};
+
+function parseFormula(formula: string): { cliffMonth: number; denom: number } {
+  const m = formula.match(/(\d+)\/(\d+)\s+at\s+month\s+(\d+)/i);
+  if (!m) return { cliffMonth: 3, denom: 48 };
+  return { cliffMonth: parseInt(m[3]!, 10), denom: parseInt(m[2]!, 10) };
+}
+
+function vestingChartData(grant: UberRSUGrant) {
+  const start = new Date(grant.vestingCommencementDate);
+  const { cliffMonth, denom } = parseFormula(grant.vestingFormula);
+  const now = new Date();
+  const points: { month: string; shares: number; vested: boolean }[] = [];
+
+  for (let m = cliffMonth; m <= denom; m += m === cliffMonth ? 1 : 3) {
+    const date = new Date(
+      Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + m, start.getUTCDate()),
+    );
+    const cumul = Math.floor((grant.totalRsus * m) / denom);
+    const prev = m === cliffMonth ? 0 : Math.floor((grant.totalRsus * (m - 3)) / denom);
+    points.push({
+      month: date.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }),
+      shares: cumul - prev,
+      vested: date <= now,
+    });
+  }
+  return points;
+}
+
+const TYPE_LABELS: Record<UberEquity['type'], string> = {
+  RSU: 'RSU (unvested)',
+  ESPP: 'ESPP',
+  Direct_Shares: 'Direct Shares',
+};
+
+export function EquityScreen({ equity, grants, loading }: Props) {
+  if (loading) {
+    return <div className="p-6 text-slate-400">Loading equity data…</div>;
+  }
+
+  const totalUsdCents = equity.reduce((s, e) => s + e.marketValueUsdCents, 0);
+  const totalEurCents = Math.round(totalUsdCents * DEFAULT_FX_RATE);
+
+  return (
+    <div className="space-y-4 pb-6">
+      <div className="bg-slate-800 rounded-2xl p-5">
+        <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">
+          Uber Equity Total
+        </p>
+        <p className="text-2xl font-bold text-white">{formatUsd(totalUsdCents)}</p>
+        <p className="text-slate-500 text-sm">
+          ≈ €{(totalEurCents / 100).toFixed(0)} @ {DEFAULT_FX_RATE} FX
+        </p>
+
+        <div className="mt-4 space-y-2">
+          {equity.map((e) => (
+            <div
+              key={e.type}
+              className="flex items-center justify-between py-2 border-b border-slate-700 last:border-0"
+            >
+              <div>
+                <p className="text-sm text-white font-medium">{TYPE_LABELS[e.type]}</p>
+                <p className="text-xs text-slate-500">
+                  {e.sharesHeld} shares · {e.sharesAvailableToTransact} available
+                  {e.holdingPeriodActive && ' · Holding period'}
+                </p>
+              </div>
+              <p className="text-sm font-semibold text-white">{formatUsd(e.marketValueUsdCents)}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {grants.map((g) => {
+        const data = vestingChartData(g);
+        const vested = data.filter((d) => d.vested).reduce((s, d) => s + d.shares, 0);
+        const total = g.totalRsus;
+        const pct = total > 0 ? Math.round((vested / total) * 100) : 0;
+
+        return (
+          <div key={g.grantId} className="bg-slate-800 rounded-2xl p-5">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="text-white font-semibold">{g.grantId}</p>
+                <p className="text-xs text-slate-500">
+                  {g.totalRsus} RSUs · Started{' '}
+                  {new Date(g.vestingCommencementDate).toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  })}
+                </p>
+                <p className="text-xs text-slate-600 mt-0.5">{g.vestingFormula}</p>
+              </div>
+              <span className="text-xs bg-green-900 text-green-300 px-2 py-0.5 rounded-full">
+                {pct}% vested
+              </span>
+            </div>
+
+            {/* Progress bar */}
+            <div className="h-1.5 bg-slate-700 rounded-full mb-4">
+              <div className="h-1.5 bg-blue-500 rounded-full" style={{ width: `${pct}%` }} />
+            </div>
+
+            {/* Vesting bar chart */}
+            <div className="h-28">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data} margin={{ top: 0, right: 0, left: -28, bottom: 0 }}>
+                  <XAxis
+                    dataKey="month"
+                    tick={{ fill: '#475569', fontSize: 9 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fill: '#475569', fontSize: 9 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: '#1e293b',
+                      border: '1px solid #334155',
+                      color: '#f1f5f9',
+                      fontSize: 11,
+                    }}
+                  />
+                  <Bar dataKey="shares" radius={[2, 2, 0, 0]}>
+                    {data.map((d, i) => (
+                      <Cell key={i} fill={d.vested ? '#3b82f6' : '#1e3a5f'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-xs text-slate-600 mt-1">
+              Blue = vested · Dark = future (quarterly view)
+            </p>
+          </div>
+        );
+      })}
+
+      {grants.length === 0 && (
+        <div className="bg-slate-800 rounded-2xl p-5 text-center">
+          <p className="text-slate-400 text-sm">No RSU grants found</p>
+          <p className="text-slate-600 text-xs mt-1">Upload a grant document from the Upload tab</p>
+        </div>
+      )}
+    </div>
+  );
+}

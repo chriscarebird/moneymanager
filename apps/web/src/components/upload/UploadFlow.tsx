@@ -23,7 +23,9 @@ const TABS: { id: UploadTab; label: string; description: string }[] = [
   },
 ];
 
-export function UploadFlow() {
+type Props = { onSaved?: () => void };
+
+export function UploadFlow({ onSaved }: Props) {
   const [activeTab, setActiveTab] = useState<UploadTab>('degiro');
 
   const currentTab = TABS.find((t) => t.id === activeTab)!;
@@ -58,9 +60,9 @@ export function UploadFlow() {
 
       {/* Panel */}
       <div className="bg-slate-800 rounded-xl p-6">
-        {activeTab === 'degiro' && <DeGiroUpload />}
-        {activeTab === 'ms-holdings' && <MSHoldingsUpload />}
-        {activeTab === 'rsu-grant' && <RSUGrantUpload />}
+        {activeTab === 'degiro' && <DeGiroUpload {...(onSaved ? { onSaved } : {})} />}
+        {activeTab === 'ms-holdings' && <MSHoldingsUpload {...(onSaved ? { onSaved } : {})} />}
+        {activeTab === 'rsu-grant' && <RSUGrantUpload {...(onSaved ? { onSaved } : {})} />}
       </div>
     </div>
   );

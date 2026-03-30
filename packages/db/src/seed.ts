@@ -261,6 +261,91 @@ async function seed(): Promise<void> {
 
   console.warn('  Seeded RSU grant U121543: 502 RSUs, vesting from 2024-11-16');
 
+  // ── Target Allocations ────────────────────────────────────────────────────
+  // 5 core DeGiro ETFs summing to 100%
+
+  const targetAllocations = [
+    {
+      id: 'target_vwrl',
+      asset_class: 'Global Equity',
+      etf_isin: 'IE00B3RBWM25',
+      etf_name: 'Vanguard FTSE All-World (VWRL)',
+      target_pct: 60,
+      exchange: 'XETRA',
+      is_free_etf: 1,
+    },
+    {
+      id: 'target_vusa',
+      asset_class: 'US Equity',
+      etf_isin: 'IE00B3XXRP09',
+      etf_name: 'Vanguard S&P 500 (VUSA)',
+      target_pct: 20,
+      exchange: 'XETRA',
+      is_free_etf: 1,
+    },
+    {
+      id: 'target_iusn',
+      asset_class: 'Small Cap',
+      etf_isin: 'IE00BF4RFH31',
+      etf_name: 'iShares MSCI World Small Cap (IUSN)',
+      target_pct: 10,
+      exchange: 'XETRA',
+      is_free_etf: 1,
+    },
+    {
+      id: 'target_vage',
+      asset_class: 'Bonds',
+      etf_isin: 'IE00BG47KB92',
+      etf_name: 'Vanguard Global Aggregate Bond (VAGE)',
+      target_pct: 5,
+      exchange: 'XETRA',
+      is_free_etf: 1,
+    },
+    {
+      id: 'target_iaex',
+      asset_class: 'Netherlands',
+      etf_isin: 'IE00B0M62Y33',
+      etf_name: 'iShares AEX UCITS (IAEX)',
+      target_pct: 5,
+      exchange: 'AEX',
+      is_free_etf: 0,
+    },
+  ] as const;
+
+  for (const alloc of targetAllocations) {
+    await client.execute({
+      sql: `
+        INSERT OR IGNORE INTO target_allocations
+          (id, user_id, asset_class, etf_isin, etf_name, target_pct, exchange, is_free_etf, active)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+      `,
+      args: [
+        alloc.id,
+        userId,
+        alloc.asset_class,
+        alloc.etf_isin,
+        alloc.etf_name,
+        alloc.target_pct,
+        alloc.exchange,
+        alloc.is_free_etf,
+      ],
+    });
+  }
+
+  console.warn('  Seeded 5 target allocations (VWRL 60%, VUSA 20%, IUSN 10%, VAGE 5%, IAEX 5%)');
+
+  // ── Cash Balance ─────────────────────────────────────────────────────────
+
+  await client.execute({
+    sql: `
+      INSERT OR IGNORE INTO cash_balances (id, user_id, amount_cents, date_updated)
+      VALUES (?, ?, ?, ?)
+    `,
+    args: ['cash_seed_001', userId, 50000, '2026-03-01T00:00:00Z'], // €500.00
+  });
+
+  console.warn('  Seeded cash balance: €500.00');
+
   console.warn('\nSeed complete.');
   client.close();
 }

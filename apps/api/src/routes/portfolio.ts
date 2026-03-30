@@ -5,7 +5,10 @@ import type { ApiResponse, PortfolioSnapshot, UberEquity, UberRSUGrant } from '@
 import {
   getSnapshots,
   getSnapshotWithHoldings,
+  getLatestSnapshot,
   insertSnapshot,
+  getUberEquity,
+  getRSUGrants,
   upsertUberEquity,
   upsertRSUGrant,
 } from '@investpilot/db';
@@ -72,6 +75,23 @@ portfolioRoutes.get('/snapshots', async (c) => {
     const message = err instanceof Error ? err.message : 'Database error';
     const response: ApiResponse<null> = { data: null, error: message };
     return c.json(response, 500);
+  }
+});
+
+/**
+ * GET /api/portfolio/snapshots/latest
+ * Get the most recent snapshot with holdings.
+ */
+portfolioRoutes.get('/snapshots/latest', async (c) => {
+  try {
+    const db = getDbClient();
+    const userId = c.get('userId');
+    const snapshot = await getLatestSnapshot(db, userId);
+    const response: ApiResponse<PortfolioSnapshot | null> = { data: snapshot, error: null };
+    return c.json(response, 200);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Database error';
+    return c.json({ data: null, error: message }, 500);
   }
 });
 
@@ -210,5 +230,39 @@ portfolioRoutes.post('/rsu-grant', async (c) => {
     const message = err instanceof Error ? err.message : 'Database error';
     const response: ApiResponse<null> = { data: null, error: message };
     return c.json(response, 500);
+  }
+});
+
+/**
+ * GET /api/portfolio/uber
+ * Get all Uber equity positions.
+ */
+portfolioRoutes.get('/uber', async (c) => {
+  try {
+    const db = getDbClient();
+    const userId = c.get('userId');
+    const equity = await getUberEquity(db, userId);
+    const response: ApiResponse<UberEquity[]> = { data: equity, error: null };
+    return c.json(response, 200);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Database error';
+    return c.json({ data: null, error: message }, 500);
+  }
+});
+
+/**
+ * GET /api/portfolio/rsu-grants
+ * Get all active RSU grants.
+ */
+portfolioRoutes.get('/rsu-grants', async (c) => {
+  try {
+    const db = getDbClient();
+    const userId = c.get('userId');
+    const grants = await getRSUGrants(db, userId);
+    const response: ApiResponse<UberRSUGrant[]> = { data: grants, error: null };
+    return c.json(response, 200);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Database error';
+    return c.json({ data: null, error: message }, 500);
   }
 });

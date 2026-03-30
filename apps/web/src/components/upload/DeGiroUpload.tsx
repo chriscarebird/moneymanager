@@ -34,7 +34,9 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-export function DeGiroUpload() {
+type Props = { onSaved?: () => void };
+
+export function DeGiroUpload({ onSaved }: Props) {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [parsed, setParsed] = useState<ParsedPortfolio | null>(null);
@@ -98,6 +100,7 @@ export function DeGiroUpload() {
       setMessage('Portfolio snapshot saved successfully.');
       setParsed(null);
       setHoldings([]);
+      onSaved?.();
     } catch (err) {
       setStatus('error');
       setMessage(err instanceof Error ? err.message : 'Failed to save');
