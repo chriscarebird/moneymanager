@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import { StatusMessage } from './StatusMessage.js';
 
 type ParsedHolding = {
@@ -41,7 +41,7 @@ export function DeGiroUpload() {
   const [holdings, setHoldings] = useState<ParsedHolding[]>([]);
   const [saving, setSaving] = useState(false);
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -107,9 +107,7 @@ export function DeGiroUpload() {
   }
 
   function updateHolding(index: number, field: keyof ParsedHolding, value: string | number) {
-    setHoldings((prev) =>
-      prev.map((h, i) => (i === index ? { ...h, [field]: value } : h)),
-    );
+    setHoldings((prev) => prev.map((h, i) => (i === index ? { ...h, [field]: value } : h)));
   }
 
   return (
@@ -195,9 +193,7 @@ export function DeGiroUpload() {
               </tbody>
             </table>
           </div>
-          {parsed.notes && (
-            <p className="text-xs text-slate-500 italic">{parsed.notes}</p>
-          )}
+          {parsed.notes && <p className="text-xs text-slate-500 italic">{parsed.notes}</p>}
           <div className="flex gap-3 pt-2">
             <button
               onClick={handleConfirm}

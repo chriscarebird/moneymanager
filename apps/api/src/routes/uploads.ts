@@ -46,10 +46,7 @@ uploadsRoutes.post('/degiro', async (c) => {
   }
 
   try {
-    const result = await parseDeGiroScreenshot(
-      parsed.data.imageBase64,
-      parsed.data.mediaType,
-    );
+    const result = await parseDeGiroScreenshot(parsed.data.imageBase64, parsed.data.mediaType);
     const response: ApiResponse<ParsedPortfolio> = { data: result, error: null };
     return c.json(response, 200);
   } catch (err) {
@@ -106,10 +103,7 @@ uploadsRoutes.post('/rsu-grant', async (c) => {
   }
 
   try {
-    const result = await parseRSUGrantDocument(
-      parsed.data.fileBase64,
-      parsed.data.mediaType,
-    );
+    const result = await parseRSUGrantDocument(parsed.data.fileBase64, parsed.data.mediaType);
     const response: ApiResponse<ParsedRSUGrant> = { data: result, error: null };
     return c.json(response, 200);
   } catch (err) {

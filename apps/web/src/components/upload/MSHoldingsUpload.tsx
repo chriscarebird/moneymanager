@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import { StatusMessage } from './StatusMessage.js';
 
 type ParsedMSEquity = {
@@ -38,7 +38,7 @@ export function MSHoldingsUpload() {
   const [equity, setEquity] = useState<ParsedMSEquity[]>([]);
   const [saving, setSaving] = useState(false);
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -144,9 +144,7 @@ export function MSHoldingsUpload() {
             {equity.map((e, i) => (
               <div key={i} className="bg-slate-700 rounded-lg p-4 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-white">
-                    {typeLabels[e.type]}
-                  </span>
+                  <span className="text-sm font-medium text-white">{typeLabels[e.type]}</span>
                   <label className="flex items-center gap-2 text-xs text-slate-400">
                     <input
                       type="checkbox"
@@ -175,11 +173,7 @@ export function MSHoldingsUpload() {
                       type="number"
                       value={e.sharesAvailableToTransact}
                       onChange={(ev) =>
-                        updateEquity(
-                          i,
-                          'sharesAvailableToTransact',
-                          parseInt(ev.target.value, 10),
-                        )
+                        updateEquity(i, 'sharesAvailableToTransact', parseInt(ev.target.value, 10))
                       }
                       className="bg-slate-600 rounded px-2 py-1 w-full text-white"
                     />

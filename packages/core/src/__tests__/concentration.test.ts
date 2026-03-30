@@ -38,26 +38,107 @@ const SNAPSHOT: PortfolioSnapshot = {
   source: 'manual',
   rawImageUrl: null,
   holdings: [
-    { snapshotId: 'snap_test', assetType: 'ETF', name: 'VWRL', isin: 'IE00B3RBWM25', quantity: 112, priceCents: 13728, valueCents: 1_537_500, exchange: 'XETRA' },
-    { snapshotId: 'snap_test', assetType: 'ETF', name: 'VUSA', isin: 'IE00B3XXRP09', quantity: 27,  priceCents: 10546, valueCents:   284_700, exchange: 'XETRA' },
-    { snapshotId: 'snap_test', assetType: 'ETF', name: 'IUSN', isin: 'IE00BF4RFH31', quantity: 339, priceCents:   780, valueCents:   264_400, exchange: 'XETRA' },
-    { snapshotId: 'snap_test', assetType: 'ETF', name: 'VAGE', isin: 'IE00BG47KB92', quantity: 59,  priceCents:  2040, valueCents:   120_400, exchange: 'XETRA' },
-    { snapshotId: 'snap_test', assetType: 'ETF', name: 'IAEX', isin: 'IE00B0M62Y33', quantity: 12,  priceCents:  9577, valueCents:   114_900, exchange: 'AEX'   },
-    { snapshotId: 'snap_test', assetType: 'ETF', name: 'EQQQ', isin: 'IE0032077012', quantity: 2,   priceCents: 49010, valueCents:    98_000, exchange: 'XETRA' },
-    { snapshotId: 'snap_test', assetType: 'ETF', name: 'BJL8', isin: 'LU3047998896', quantity: 10,  priceCents:  1041, valueCents:    10_400, exchange: 'XETRA' },
+    {
+      snapshotId: 'snap_test',
+      assetType: 'ETF',
+      name: 'VWRL',
+      isin: 'IE00B3RBWM25',
+      quantity: 112,
+      priceCents: 13728,
+      valueCents: 1_537_500,
+      exchange: 'XETRA',
+    },
+    {
+      snapshotId: 'snap_test',
+      assetType: 'ETF',
+      name: 'VUSA',
+      isin: 'IE00B3XXRP09',
+      quantity: 27,
+      priceCents: 10546,
+      valueCents: 284_700,
+      exchange: 'XETRA',
+    },
+    {
+      snapshotId: 'snap_test',
+      assetType: 'ETF',
+      name: 'IUSN',
+      isin: 'IE00BF4RFH31',
+      quantity: 339,
+      priceCents: 780,
+      valueCents: 264_400,
+      exchange: 'XETRA',
+    },
+    {
+      snapshotId: 'snap_test',
+      assetType: 'ETF',
+      name: 'VAGE',
+      isin: 'IE00BG47KB92',
+      quantity: 59,
+      priceCents: 2040,
+      valueCents: 120_400,
+      exchange: 'XETRA',
+    },
+    {
+      snapshotId: 'snap_test',
+      assetType: 'ETF',
+      name: 'IAEX',
+      isin: 'IE00B0M62Y33',
+      quantity: 12,
+      priceCents: 9577,
+      valueCents: 114_900,
+      exchange: 'AEX',
+    },
+    {
+      snapshotId: 'snap_test',
+      assetType: 'ETF',
+      name: 'EQQQ',
+      isin: 'IE0032077012',
+      quantity: 2,
+      priceCents: 49010,
+      valueCents: 98_000,
+      exchange: 'XETRA',
+    },
+    {
+      snapshotId: 'snap_test',
+      assetType: 'ETF',
+      name: 'BJL8',
+      isin: 'LU3047998896',
+      quantity: 10,
+      priceCents: 1041,
+      valueCents: 10_400,
+      exchange: 'XETRA',
+    },
   ],
 };
 
 // Available-only Uber equity (Direct Shares + ESPP, not unvested RSUs)
 const UBER_AVAILABLE: UberEquity[] = [
-  { type: 'Direct_Shares', sharesHeld: 32,  sharesAvailableToTransact: 32,  marketValueUsdCents: 221_400,   holdingPeriodActive: false },
-  { type: 'ESPP',          sharesHeld: 178, sharesAvailableToTransact: 178, marketValueUsdCents: 1_231_400, holdingPeriodActive: false },
+  {
+    type: 'Direct_Shares',
+    sharesHeld: 32,
+    sharesAvailableToTransact: 32,
+    marketValueUsdCents: 221_400,
+    holdingPeriodActive: false,
+  },
+  {
+    type: 'ESPP',
+    sharesHeld: 178,
+    sharesAvailableToTransact: 178,
+    marketValueUsdCents: 1_231_400,
+    holdingPeriodActive: false,
+  },
 ];
 
 // All Uber equity including unvested RSUs
 const UBER_ALL: UberEquity[] = [
   ...UBER_AVAILABLE,
-  { type: 'RSU', sharesHeld: 335, sharesAvailableToTransact: 0, marketValueUsdCents: 2_317_500, holdingPeriodActive: false },
+  {
+    type: 'RSU',
+    sharesHeld: 335,
+    sharesAvailableToTransact: 0,
+    marketValueUsdCents: 2_317_500,
+    holdingPeriodActive: false,
+  },
 ];
 
 const FX_RATE = 0.92;

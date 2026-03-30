@@ -68,10 +68,11 @@ describe('checkFairUse — first trade executed', () => {
 describe('checkFairUse — chain intact (same direction, ≥€1,000)', () => {
   it('counts second same-direction ≥€1,000 trade as free', () => {
     const tracker = withTrade(
-      withTrade(
-        emptyTracker(ISIN_VWRL, MONTH),
-        { direction: 'buy', amountCents: 200_000, wasFree: true },
-      ),
+      withTrade(emptyTracker(ISIN_VWRL, MONTH), {
+        direction: 'buy',
+        amountCents: 200_000,
+        wasFree: true,
+      }),
       { direction: 'buy', amountCents: FREE_CHAIN_MIN_CENTS, wasFree: true },
     );
     const status = checkFairUse(tracker, MONTH);
@@ -96,10 +97,11 @@ describe('checkFairUse — chain intact (same direction, ≥€1,000)', () => {
 describe('checkFairUse — chain broken by opposite direction', () => {
   it('marks chain as broken after opposite-direction second trade', () => {
     const tracker = withTrade(
-      withTrade(
-        emptyTracker(ISIN_VWRL, MONTH),
-        { direction: 'buy', amountCents: 200_000, wasFree: true },
-      ),
+      withTrade(emptyTracker(ISIN_VWRL, MONTH), {
+        direction: 'buy',
+        amountCents: 200_000,
+        wasFree: true,
+      }),
       { direction: 'sell', amountCents: 200_000, wasFree: false }, // opposite direction
     );
     const status = checkFairUse(tracker, MONTH);
@@ -114,10 +116,11 @@ describe('checkFairUse — chain broken by opposite direction', () => {
 describe('checkFairUse — chain broken by sub-€1,000 second trade', () => {
   it('marks chain as broken after sub-€1,000 subsequent trade', () => {
     const tracker = withTrade(
-      withTrade(
-        emptyTracker(ISIN_VWRL, MONTH),
-        { direction: 'buy', amountCents: 200_000, wasFree: true },
-      ),
+      withTrade(emptyTracker(ISIN_VWRL, MONTH), {
+        direction: 'buy',
+        amountCents: 200_000,
+        wasFree: true,
+      }),
       { direction: 'buy', amountCents: 99_999, wasFree: false }, // < €1,000
     );
     const status = checkFairUse(tracker, MONTH);
@@ -146,39 +149,43 @@ describe('wouldBeFree', () => {
   });
 
   it('returns true for qualifying subsequent trade', () => {
-    const tracker = withTrade(
-      emptyTracker(ISIN_VWRL, MONTH),
-      { direction: 'buy', amountCents: 200_000, wasFree: true },
-    );
+    const tracker = withTrade(emptyTracker(ISIN_VWRL, MONTH), {
+      direction: 'buy',
+      amountCents: 200_000,
+      wasFree: true,
+    });
     const status = checkFairUse(tracker, MONTH);
     expect(wouldBeFree(status, 'buy', FREE_CHAIN_MIN_CENTS)).toBe(true);
     expect(wouldBeFree(status, 'buy', FREE_CHAIN_MIN_CENTS + 1)).toBe(true);
   });
 
   it('returns false for opposite direction', () => {
-    const tracker = withTrade(
-      emptyTracker(ISIN_VWRL, MONTH),
-      { direction: 'buy', amountCents: 200_000, wasFree: true },
-    );
+    const tracker = withTrade(emptyTracker(ISIN_VWRL, MONTH), {
+      direction: 'buy',
+      amountCents: 200_000,
+      wasFree: true,
+    });
     const status = checkFairUse(tracker, MONTH);
     expect(wouldBeFree(status, 'sell', FREE_CHAIN_MIN_CENTS)).toBe(false);
   });
 
   it('returns false for sub-€1,000 subsequent trade', () => {
-    const tracker = withTrade(
-      emptyTracker(ISIN_VWRL, MONTH),
-      { direction: 'buy', amountCents: 200_000, wasFree: true },
-    );
+    const tracker = withTrade(emptyTracker(ISIN_VWRL, MONTH), {
+      direction: 'buy',
+      amountCents: 200_000,
+      wasFree: true,
+    });
     const status = checkFairUse(tracker, MONTH);
     expect(wouldBeFree(status, 'buy', 99_999)).toBe(false);
   });
 
   it('returns false when chain is broken', () => {
     const tracker = withTrade(
-      withTrade(
-        emptyTracker(ISIN_VWRL, MONTH),
-        { direction: 'buy', amountCents: 200_000, wasFree: true },
-      ),
+      withTrade(emptyTracker(ISIN_VWRL, MONTH), {
+        direction: 'buy',
+        amountCents: 200_000,
+        wasFree: true,
+      }),
       { direction: 'sell', amountCents: 200_000, wasFree: false },
     );
     const status = checkFairUse(tracker, MONTH);
@@ -206,7 +213,14 @@ describe('annotateTradeFees', () => {
 
   it('charges for sub-€1,000 second trade in same direction', () => {
     const trackers = new Map<string, DeGiroMonthlyTradeTracker>([
-      [ISIN_VWRL, withTrade(emptyTracker(ISIN_VWRL, MONTH), { direction: 'buy', amountCents: 200_000, wasFree: true })],
+      [
+        ISIN_VWRL,
+        withTrade(emptyTracker(ISIN_VWRL, MONTH), {
+          direction: 'buy',
+          amountCents: 200_000,
+          wasFree: true,
+        }),
+      ],
     ]);
     const trades = [
       { isin: ISIN_VWRL, direction: 'buy' as const, amountCents: 50_000 }, // sub-€1,000
@@ -223,12 +237,19 @@ describe('optimiseTradeOrder', () => {
   it('puts new ISINs (free) before already-traded ISINs (may be charged)', () => {
     // VWRL has already been traded; VUSA has not
     const trackers = new Map<string, DeGiroMonthlyTradeTracker>([
-      [ISIN_VWRL, withTrade(emptyTracker(ISIN_VWRL, MONTH), { direction: 'buy', amountCents: 200_000, wasFree: true })],
+      [
+        ISIN_VWRL,
+        withTrade(emptyTracker(ISIN_VWRL, MONTH), {
+          direction: 'buy',
+          amountCents: 200_000,
+          wasFree: true,
+        }),
+      ],
       [ISIN_VUSA, emptyTracker(ISIN_VUSA, MONTH)],
     ]);
     const trades = [
       { isin: ISIN_VWRL, direction: 'sell' as const, amountCents: 200_000 }, // will break chain (opposite dir)
-      { isin: ISIN_VUSA, direction: 'buy' as const, amountCents: 150_000 },  // first trade, free
+      { isin: ISIN_VUSA, direction: 'buy' as const, amountCents: 150_000 }, // first trade, free
     ];
     const result = optimiseTradeOrder(trades, trackers, MONTH);
     // VUSA (free) should come first in optimal order

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import { StatusMessage } from './StatusMessage.js';
 
 type ParsedRSUGrant = {
@@ -30,7 +30,7 @@ export function RSUGrantUpload() {
   const [grant, setGrant] = useState<ParsedRSUGrant | null>(null);
   const [saving, setSaving] = useState(false);
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 

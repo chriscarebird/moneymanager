@@ -155,8 +155,7 @@ export function computeRebalancingPlan(
     }
 
     // Allocate proportional share of available cash to this shortfall
-    const proportion =
-      totalShortfallEurCents > 0 ? shortfall / totalShortfallEurCents : 0;
+    const proportion = totalShortfallEurCents > 0 ? shortfall / totalShortfallEurCents : 0;
     const idealBuy = Math.min(
       Math.round(availableCashEurCents * proportion),
       shortfall,

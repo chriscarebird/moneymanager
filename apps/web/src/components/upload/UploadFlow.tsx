@@ -45,9 +45,7 @@ export function UploadFlow() {
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === tab.id
-                ? 'bg-blue-600 text-white'
-                : 'text-slate-400 hover:text-white'
+              activeTab === tab.id ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
             {tab.label}

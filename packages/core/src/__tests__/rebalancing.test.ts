@@ -9,18 +9,90 @@ import {
 
 // ── Reference holdings (from SPEC §2, same as concentration test) ─────────────
 const HOLDINGS: Holding[] = [
-  { snapshotId: 'snap_test', assetType: 'ETF', name: 'VWRL', isin: 'IE00B3RBWM25', quantity: 112, priceCents: 13728, valueCents: 1_537_500, exchange: 'XETRA' },
-  { snapshotId: 'snap_test', assetType: 'ETF', name: 'VUSA', isin: 'IE00B3XXRP09', quantity: 27,  priceCents: 10546, valueCents:   284_700, exchange: 'XETRA' },
-  { snapshotId: 'snap_test', assetType: 'ETF', name: 'IUSN', isin: 'IE00BF4RFH31', quantity: 339, priceCents:   780, valueCents:   264_400, exchange: 'XETRA' },
-  { snapshotId: 'snap_test', assetType: 'ETF', name: 'VAGE', isin: 'IE00BG47KB92', quantity: 59,  priceCents:  2040, valueCents:   120_400, exchange: 'XETRA' },
+  {
+    snapshotId: 'snap_test',
+    assetType: 'ETF',
+    name: 'VWRL',
+    isin: 'IE00B3RBWM25',
+    quantity: 112,
+    priceCents: 13728,
+    valueCents: 1_537_500,
+    exchange: 'XETRA',
+  },
+  {
+    snapshotId: 'snap_test',
+    assetType: 'ETF',
+    name: 'VUSA',
+    isin: 'IE00B3XXRP09',
+    quantity: 27,
+    priceCents: 10546,
+    valueCents: 284_700,
+    exchange: 'XETRA',
+  },
+  {
+    snapshotId: 'snap_test',
+    assetType: 'ETF',
+    name: 'IUSN',
+    isin: 'IE00BF4RFH31',
+    quantity: 339,
+    priceCents: 780,
+    valueCents: 264_400,
+    exchange: 'XETRA',
+  },
+  {
+    snapshotId: 'snap_test',
+    assetType: 'ETF',
+    name: 'VAGE',
+    isin: 'IE00BG47KB92',
+    quantity: 59,
+    priceCents: 2040,
+    valueCents: 120_400,
+    exchange: 'XETRA',
+  },
 ];
 
 // Simple 4-ETF target allocation summing to 100%
 const TARGETS: TargetAllocation[] = [
-  { id: 't1', assetClass: 'Global Equity', etfIsin: 'IE00B3RBWM25', etfName: 'VWRL', targetPct: 60, exchange: 'XETRA', isFreeEtf: true,  active: true },
-  { id: 't2', assetClass: 'US Equity',     etfIsin: 'IE00B3XXRP09', etfName: 'VUSA', targetPct: 20, exchange: 'XETRA', isFreeEtf: true,  active: true },
-  { id: 't3', assetClass: 'Small Cap',     etfIsin: 'IE00BF4RFH31', etfName: 'IUSN', targetPct: 12, exchange: 'XETRA', isFreeEtf: true,  active: true },
-  { id: 't4', assetClass: 'Bonds',         etfIsin: 'IE00BG47KB92', etfName: 'VAGE', targetPct:  8, exchange: 'XETRA', isFreeEtf: false, active: true },
+  {
+    id: 't1',
+    assetClass: 'Global Equity',
+    etfIsin: 'IE00B3RBWM25',
+    etfName: 'VWRL',
+    targetPct: 60,
+    exchange: 'XETRA',
+    isFreeEtf: true,
+    active: true,
+  },
+  {
+    id: 't2',
+    assetClass: 'US Equity',
+    etfIsin: 'IE00B3XXRP09',
+    etfName: 'VUSA',
+    targetPct: 20,
+    exchange: 'XETRA',
+    isFreeEtf: true,
+    active: true,
+  },
+  {
+    id: 't3',
+    assetClass: 'Small Cap',
+    etfIsin: 'IE00BF4RFH31',
+    etfName: 'IUSN',
+    targetPct: 12,
+    exchange: 'XETRA',
+    isFreeEtf: true,
+    active: true,
+  },
+  {
+    id: 't4',
+    assetClass: 'Bonds',
+    etfIsin: 'IE00BG47KB92',
+    etfName: 'VAGE',
+    targetPct: 8,
+    exchange: 'XETRA',
+    isFreeEtf: false,
+    active: true,
+  },
 ];
 
 // Total portfolio value: 1,537,500 + 284,700 + 264,400 + 120,400 = 2,207,000 cents
@@ -180,7 +252,16 @@ describe('computeRebalancingPlan — inactive targets', () => {
   it('ignores inactive targets', () => {
     const withInactive: TargetAllocation[] = [
       ...TARGETS,
-      { id: 't99', assetClass: 'Crypto', etfIsin: 'XX99', etfName: 'FAKE', targetPct: 5, exchange: 'XETRA', isFreeEtf: false, active: false },
+      {
+        id: 't99',
+        assetClass: 'Crypto',
+        etfIsin: 'XX99',
+        etfName: 'FAKE',
+        targetPct: 5,
+        exchange: 'XETRA',
+        isFreeEtf: false,
+        active: false,
+      },
     ];
     const plan = computeRebalancingPlan(HOLDINGS, withInactive, 500_000, 5);
     expect(plan.actions).toHaveLength(TARGETS.length); // inactive not included

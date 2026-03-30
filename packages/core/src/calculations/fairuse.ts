@@ -128,8 +128,7 @@ export function wouldBeFree(
 
   // Subsequent trade: must be same direction AND ≥€1,000
   return (
-    proposedDirection === status.requiredDirection &&
-    proposedAmountCents >= FREE_CHAIN_MIN_CENTS
+    proposedDirection === status.requiredDirection && proposedAmountCents >= FREE_CHAIN_MIN_CENTS
   );
 }
 
@@ -147,9 +146,18 @@ export function annotateTradeFees(
   trades: Array<{ isin: string; direction: 'buy' | 'sell'; amountCents: number }>,
   trackers: Map<string, DeGiroMonthlyTradeTracker>,
   month: string,
-): Array<{ isin: string; direction: 'buy' | 'sell'; amountCents: number; isFree: boolean; feeCents: number }> {
+): Array<{
+  isin: string;
+  direction: 'buy' | 'sell';
+  amountCents: number;
+  isFree: boolean;
+  feeCents: number;
+}> {
   // Build a mutable copy of chain state per ISIN
-  const stateByIsin = new Map<string, { chainBroken: boolean; firstDirection: 'buy' | 'sell' | null; tradeCount: number }>();
+  const stateByIsin = new Map<
+    string,
+    { chainBroken: boolean; firstDirection: 'buy' | 'sell' | null; tradeCount: number }
+  >();
 
   // Initialise from existing trackers
   for (const [isin, tracker] of trackers) {
@@ -212,7 +220,13 @@ export function optimiseTradeOrder(
   trades: Array<{ isin: string; direction: 'buy' | 'sell'; amountCents: number }>,
   trackers: Map<string, DeGiroMonthlyTradeTracker>,
   month: string,
-): Array<{ isin: string; direction: 'buy' | 'sell'; amountCents: number; isFree: boolean; feeCents: number }> {
+): Array<{
+  isin: string;
+  direction: 'buy' | 'sell';
+  amountCents: number;
+  isFree: boolean;
+  feeCents: number;
+}> {
   const statusByIsin = new Map<string, FairUseStatus>();
   for (const [isin, tracker] of trackers) {
     statusByIsin.set(isin, checkFairUse(tracker, month));
@@ -224,7 +238,11 @@ export function optimiseTradeOrder(
     let score: number;
     if (!status || status.executedTradeCount === 0) {
       score = 0; // First trade, always free
-    } else if (!status.chainBroken && trade.direction === status.requiredDirection && trade.amountCents >= FREE_CHAIN_MIN_CENTS) {
+    } else if (
+      !status.chainBroken &&
+      trade.direction === status.requiredDirection &&
+      trade.amountCents >= FREE_CHAIN_MIN_CENTS
+    ) {
       score = 1; // Chain intact, qualifying trade
     } else {
       score = 2; // Will be charged or break chain
@@ -232,9 +250,7 @@ export function optimiseTradeOrder(
     return { trade, score };
   });
 
-  const ordered = scored
-    .sort((a, b) => a.score - b.score)
-    .map((s) => s.trade);
+  const ordered = scored.sort((a, b) => a.score - b.score).map((s) => s.trade);
 
   return annotateTradeFees(ordered, trackers, month);
 }
