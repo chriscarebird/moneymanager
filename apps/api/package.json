@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --watch --experimental-vm-modules --loader ts-node/esm src/index.ts",
+    "dev": "node --watch --import tsx/esm src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "test": "vitest run --passWithNoTests",
@@ -30,6 +30,7 @@
     "@types/node": "^22.0.0",
     "@types/web-push": "^3.6.4",
     "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.5.0",
     "vitest": "^2.0.0"
   }

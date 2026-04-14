@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import Anthropic from '@anthropic-ai/sdk';
+import type Anthropic from '@anthropic-ai/sdk';
 import { getAnthropicClient, OPUS_MODEL } from '../client.js';
 import type {
   PortfolioSnapshot,
