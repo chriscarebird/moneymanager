@@ -11,6 +11,7 @@ import {
 type Props = {
   snapshot: PortfolioSnapshot | null;
   equity: UberEquity[];
+  fxRate?: number;
 };
 
 /** SVG semi-circle gauge 0–50% range */
@@ -86,8 +87,8 @@ function GaugeSvg({ pct, target }: { pct: number; target: number }) {
   );
 }
 
-export function ConcentrationGauge({ snapshot, equity }: Props) {
-  const pct = snapshot ? uberConcentrationPct(snapshot, equity) : 0;
+export function ConcentrationGauge({ snapshot, equity, fxRate }: Props) {
+  const pct = snapshot ? uberConcentrationPct(snapshot, equity, fxRate) : 0;
   const color = concentrationColor(pct);
 
   const label =

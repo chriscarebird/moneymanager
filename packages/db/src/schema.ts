@@ -22,6 +22,9 @@ export const SCHEMA_TABLES = [
   'degiro_etf_list',
   'degiro_monthly_trade_tracker',
   'degiro_monthly_trade_transactions',
+  'push_subscriptions',
+  'trading_windows',
+  'alert_suppressions',
   'migrations',
 ] as const;
 

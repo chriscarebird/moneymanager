@@ -40,3 +40,29 @@ export {
   deleteTargetAllocation,
 } from './queries/allocations.js';
 export { getCashBalance, setCashBalance } from './queries/cash.js';
+export {
+  getPendingTransfers,
+  insertTransfer,
+  updateTransferStatus,
+} from './queries/transfers.js';
+export {
+  getTradingWindows,
+  getNextTradingWindow,
+  upsertTradingWindow,
+  updateTradingWindowState,
+} from './queries/tradingWindows.js';
+export type { TradingWindow, TradingWindowState } from './queries/tradingWindows.js';
+export {
+  insertAdviceLog,
+  getAdviceLog,
+  markAdviceLogFollowed,
+  markStaleAdvice,
+} from './queries/adviceLog.js';
+export {
+  savePushSubscription,
+  getPushSubscriptions,
+  deletePushSubscription,
+  getAlertSuppression,
+  upsertAlertSuppression,
+} from './queries/pushSubscriptions.js';
+export type { PushSubscription } from './queries/pushSubscriptions.js';

@@ -14,6 +14,7 @@ type Props = {
   snapshot: PortfolioSnapshot | null;
   equity: UberEquity[];
   grants: UberRSUGrant[];
+  fxRate?: number;
 };
 
 /** Median Uber price in USD cents from equity positions */
@@ -25,7 +26,7 @@ function estimateUberPrice(equity: UberEquity[]): number {
   return shares > 0 ? Math.round(total / shares) : 6914;
 }
 
-export function VestingProjectionChart({ snapshot, equity, grants }: Props) {
+export function VestingProjectionChart({ snapshot, equity, grants, fxRate }: Props) {
   if (!snapshot) {
     return (
       <div className="bg-slate-800 rounded-2xl p-5">
@@ -40,7 +41,7 @@ export function VestingProjectionChart({ snapshot, equity, grants }: Props) {
   const pricePerShare = estimateUberPrice(equity);
   const data = [0, 1, 2, 3, 6, 9, 12].map((m) => {
     const label = m === 0 ? 'Now' : `+${m}m`;
-    const pct = projectConcentration(snapshot, equity, grants, pricePerShare, m);
+    const pct = projectConcentration(snapshot, equity, grants, pricePerShare, m, fxRate);
     return { label, pct: parseFloat(pct.toFixed(1)) };
   });
 

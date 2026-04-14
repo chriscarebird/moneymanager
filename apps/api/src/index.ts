@@ -8,6 +8,11 @@ import { portfolioRoutes } from './routes/portfolio.js';
 import { adviceRoutes } from './routes/advice.js';
 import { uploadsRoutes } from './routes/uploads.js';
 import { settingsRoutes } from './routes/settings.js';
+import { notificationsRoutes } from './routes/notifications.js';
+import { transfersRoutes } from './routes/transfers.js';
+import { tradingWindowsRoutes } from './routes/tradingWindows.js';
+import { marketRoutes } from './routes/market.js';
+import { runSchedulerForAllUsers } from './services/notificationScheduler.js';
 import type { AppVariables } from './types.js';
 
 const app = new Hono<{ Variables: AppVariables }>();
@@ -44,17 +49,32 @@ app.get('/api/health', (c) => {
 
 app.route('/api/auth', authRoutes);
 
+// VAPID public key is public (needed before login for PWA registration)
+app.get('/api/notifications/vapid-public-key', (c) => {
+  const publicKey = process.env['VAPID_PUBLIC_KEY'];
+  if (!publicKey) return c.json({ data: null, error: 'Push not configured' }, 503);
+  return c.json({ data: { publicKey }, error: null }, 200);
+});
+
 // ── Protected routes (require valid session) ─────────────────────────────────
 
 app.use('/api/portfolio/*', requireAuth);
 app.use('/api/advice/*', requireAuth);
 app.use('/api/uploads/*', requireAuth);
 app.use('/api/settings/*', requireAuth);
+app.use('/api/notifications/*', requireAuth);
+app.use('/api/transfers/*', requireAuth);
+app.use('/api/trading-windows/*', requireAuth);
+app.use('/api/market/*', requireAuth);
 
 app.route('/api/portfolio', portfolioRoutes);
 app.route('/api/advice', adviceRoutes);
 app.route('/api/uploads', uploadsRoutes);
 app.route('/api/settings', settingsRoutes);
+app.route('/api/notifications', notificationsRoutes);
+app.route('/api/transfers', transfersRoutes);
+app.route('/api/trading-windows', tradingWindowsRoutes);
+app.route('/api/market', marketRoutes);
 
 // ── 404 handler ──────────────────────────────────────────────────────────────
 
@@ -86,6 +106,10 @@ serve(
   },
   (info) => {
     console.warn(`InvestPilot API running on http://localhost:${info.port}`);
+    // Run scheduler on startup (non-blocking)
+    runSchedulerForAllUsers().catch((err: unknown) => {
+      console.error('Startup scheduler error:', err);
+    });
   },
 );
 

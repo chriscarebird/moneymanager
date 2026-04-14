@@ -155,7 +155,16 @@ export type NotificationType =
   | 'rsu_vesting'
   | 'rebalance_due'
   | 'transfer_reminder'
-  | 'monthly_review';
+  | 'monthly_review'
+  | 'trading_window_open'
+  | 'trading_window_missing'
+  | 'market_dip'
+  | 'monthly_investment'
+  | 'transfer_followup'
+  | 'transfer_arrived'
+  | 'dca_scheduled'
+  | 'portfolio_drift'
+  | 'quarterly_review';
 
 export interface Notification {
   id: string;

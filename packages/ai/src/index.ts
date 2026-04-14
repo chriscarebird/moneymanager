@@ -28,18 +28,30 @@ export {
   normalizeToISO8601,
 } from './prompts/parser.js';
 
-// Investment advisor
+// Investment advisor (rebalance commentator + RSU + DCA + streaming chat)
 export type {
   AdvisoryMode,
   RebalancingAdviceInput,
   RSUAdviceInput,
+  DCAAdviceInput,
+  ChatMessage,
   AdviceResponse,
 } from './prompts/advisor.js';
 export {
   AdviceResponseSchema,
   generateRebalancingAdvice,
   generateRSUAdvice,
+  generateDCAAdvice,
+  streamAdvisoryChat,
 } from './prompts/advisor.js';
+
+// Strategy advisor (Opus + web search, quarterly review)
+export type { StrategyAdviceInput, StrategyAdvice } from './prompts/strategy.js';
+export { StrategyAdviceSchema, generateStrategyAdvice } from './prompts/strategy.js';
+
+// Uber equity advisor (Sonnet + web search, trading window)
+export type { UberSellAdviceInput, UberSellAdvice } from './prompts/uberAdvisor.js';
+export { UberSellAdviceSchema, generateUberSellAdvice } from './prompts/uberAdvisor.js';
 
 // Monthly briefing
 export type { BriefingInput, BriefingResponse } from './prompts/briefing.js';

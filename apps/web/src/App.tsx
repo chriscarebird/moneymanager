@@ -1,5 +1,5 @@
-import { useState, type ChangeEvent, type FormEvent } from 'react';
-import { LayoutDashboard, Upload, RefreshCw, TrendingUp, Settings } from 'lucide-react';
+import { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
+import { LayoutDashboard, Upload, RefreshCw, TrendingUp, Settings, Bot } from 'lucide-react';
 import { UploadFlow } from './components/upload/UploadFlow.js';
 import { PortfolioValueCard } from './components/dashboard/PortfolioValueCard.js';
 import { AllocationDonut } from './components/dashboard/AllocationDonut.js';
@@ -9,14 +9,19 @@ import { UpcomingEvents } from './components/dashboard/UpcomingEvents.js';
 import { EquityScreen } from './components/equity/EquityScreen.js';
 import { RebalanceScreen } from './components/rebalance/RebalanceScreen.js';
 import { SettingsScreen } from './components/settings/SettingsScreen.js';
+import { AdvisorScreen } from './components/advisor/AdvisorScreen.js';
+import { TradingWindowFlow } from './components/advisor/TradingWindowFlow.js';
 import {
   useLatestSnapshot,
   useUberEquity,
   useRSUGrants,
   useTargetAllocations,
   useCashBalance,
+  useNextTradingWindow,
+  useLivePrices,
 } from './hooks/useData.js';
 import { api } from './lib/api.js';
+import { registerSW } from './sw.js';
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
@@ -94,13 +99,14 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
 // ── Main app shell ────────────────────────────────────────────────────────────
 
-type Tab = 'dashboard' | 'upload' | 'rebalance' | 'equity' | 'settings';
+type Tab = 'dashboard' | 'upload' | 'rebalance' | 'equity' | 'advisor' | 'settings';
 
 const TABS: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'upload', label: 'Upload', icon: Upload },
   { id: 'rebalance', label: 'Rebalance', icon: RefreshCw },
   { id: 'equity', label: 'Equity', icon: TrendingUp },
+  { id: 'advisor', label: 'Advisor', icon: Bot },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
@@ -112,6 +118,8 @@ function AppShell({ onLogout }: { onLogout: () => void }) {
   const grants = useRSUGrants();
   const targets = useTargetAllocations();
   const cash = useCashBalance();
+  const tradingWindow = useNextTradingWindow();
+  const livePrices = useLivePrices(true);
 
   function refetchAll() {
     snapshot.refetch();
@@ -119,21 +127,32 @@ function AppShell({ onLogout }: { onLogout: () => void }) {
     grants.refetch();
     targets.refetch();
     cash.refetch();
+    tradingWindow.refetch();
+    livePrices.refetch();
   }
 
   const cashCents = cash.data?.amountCents ?? 0;
+  // Use live FX rate if available, fall back to default
+  const fxRate = livePrices.data?.fxRateUsdEur ?? 0.92;
 
   return (
     <div className="min-h-screen bg-slate-900 text-white flex flex-col">
       {/* Header */}
       <header className="bg-slate-800 border-b border-slate-700 px-4 py-3 flex items-center justify-between shrink-0">
         <h1 className="text-lg font-bold text-white">InvestPilot</h1>
-        <button
-          onClick={onLogout}
-          className="text-slate-400 hover:text-red-400 text-sm transition-colors"
-        >
-          Sign out
-        </button>
+        <div className="flex items-center gap-3">
+          {livePrices.data && (
+            <span className="text-xs text-slate-500">
+              FX {fxRate.toFixed(4)}
+            </span>
+          )}
+          <button
+            onClick={onLogout}
+            className="text-slate-400 hover:text-red-400 text-sm transition-colors"
+          >
+            Sign out
+          </button>
+        </div>
       </header>
 
       {/* Content — scrollable */}
@@ -141,13 +160,23 @@ function AppShell({ onLogout }: { onLogout: () => void }) {
         {/* ── Dashboard ─────────────────────────────────────────────── */}
         {tab === 'dashboard' && (
           <div className="space-y-4 max-w-lg mx-auto">
-            <PortfolioValueCard snapshot={snapshot.data ?? null} equity={equity.data ?? []} />
+            <PortfolioValueCard
+              snapshot={snapshot.data ?? null}
+              equity={equity.data ?? []}
+              livePrices={livePrices.data ?? null}
+              fxRate={fxRate}
+            />
             <AllocationDonut snapshot={snapshot.data ?? null} targets={targets.data ?? []} />
-            <ConcentrationGauge snapshot={snapshot.data ?? null} equity={equity.data ?? []} />
+            <ConcentrationGauge
+              snapshot={snapshot.data ?? null}
+              equity={equity.data ?? []}
+              fxRate={fxRate}
+            />
             <VestingProjectionChart
               snapshot={snapshot.data ?? null}
               equity={equity.data ?? []}
               grants={grants.data ?? []}
+              fxRate={fxRate}
             />
             <UpcomingEvents grants={grants.data ?? []} cashCents={cashCents} />
           </div>
@@ -180,6 +209,18 @@ function AppShell({ onLogout }: { onLogout: () => void }) {
               grants={grants.data ?? []}
               loading={equity.loading || grants.loading}
             />
+          </div>
+        )}
+
+        {/* ── Advisor ───────────────────────────────────────────────── */}
+        {tab === 'advisor' && (
+          <div className="max-w-lg mx-auto space-y-4">
+            {/* Trading window workflow sits above the advisor chat */}
+            <TradingWindowFlow
+              window={tradingWindow.data ?? null}
+              onWindowSaved={() => { tradingWindow.refetch(); refetchAll(); }}
+            />
+            <AdvisorScreen />
           </div>
         )}
 
@@ -221,7 +262,6 @@ export function App() {
 
   async function checkAuth() {
     try {
-      // Try a protected endpoint; if it fails, stay on login
       await api.getTargets();
       setAuthed(true);
     } catch {
@@ -229,10 +269,11 @@ export function App() {
     }
   }
 
-  // Check session on mount
-  useState(() => {
+  // Register service worker and check session on mount
+  useEffect(() => {
+    registerSW();
     void checkAuth();
-  });
+  }, []);
 
   if (!authed) {
     return <LoginScreen onLogin={() => setAuthed(true)} />;
