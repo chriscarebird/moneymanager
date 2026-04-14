@@ -9,6 +9,8 @@ type Props = {
   loading: boolean;
 };
 
+const CHARGED_FEE_CENTS = 200; // €2.00 per paid trade
+
 type Trade = {
   isin: string;
   name: string;
@@ -16,6 +18,8 @@ type Trade = {
   amountCents: number;
   driftPct: number;
   executed: boolean;
+  isFreeEtf: boolean;
+  estimatedFeeCents: number;
 };
 
 const MIN_ORDER_CENTS = 20_000; // €200
@@ -39,6 +43,9 @@ function computeTrades(
 
     if (Math.abs(diff) < MIN_ORDER_CENTS) continue;
 
+    // DeGiro fair-use rule: first trade per free ETF per month is free
+    const estimatedFeeCents = target.isFreeEtf ? 0 : CHARGED_FEE_CENTS;
+
     trades.push({
       isin: target.etfIsin,
       name: target.etfName,
@@ -46,6 +53,8 @@ function computeTrades(
       amountCents: Math.abs(Math.round(diff)),
       driftPct,
       executed: false,
+      isFreeEtf: target.isFreeEtf,
+      estimatedFeeCents,
     });
   }
 
@@ -96,6 +105,7 @@ export function RebalanceScreen({ snapshot, targets, cashCents, loading }: Props
 
   const pending = trades.filter((t) => !t.executed);
   const done = trades.filter((t) => t.executed);
+  const totalFeeCents = trades.reduce((s, t) => s + t.estimatedFeeCents, 0);
 
   return (
     <div className="space-y-4 pb-6">
@@ -104,7 +114,7 @@ export function RebalanceScreen({ snapshot, targets, cashCents, loading }: Props
         <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-2">
           Rebalance Plan
         </p>
-        <div className="flex gap-4 text-sm mb-3">
+        <div className="flex gap-4 text-sm mb-3 flex-wrap">
           <div>
             <span className="text-slate-500">Portfolio </span>
             <span className="text-white font-medium">{formatEur(totalEtfEurCents(snapshot))}</span>
@@ -113,6 +123,14 @@ export function RebalanceScreen({ snapshot, targets, cashCents, loading }: Props
             <span className="text-slate-500">Cash </span>
             <span className="text-white font-medium">{formatEur(cashCents)}</span>
           </div>
+          {computed && trades.length > 0 && (
+            <div>
+              <span className="text-slate-500">Est. fees </span>
+              <span className={totalFeeCents === 0 ? 'text-green-400 font-medium' : 'text-yellow-400 font-medium'}>
+                {totalFeeCents === 0 ? 'FREE' : formatEur(totalFeeCents)}
+              </span>
+            </div>
+          )}
         </div>
         <button
           onClick={compute}
@@ -197,6 +215,15 @@ export function RebalanceScreen({ snapshot, targets, cashCents, loading }: Props
                         }`}
                       >
                         {t.action.toUpperCase()}
+                      </span>
+                      <span
+                        className={`text-xs font-semibold px-1.5 py-0.5 rounded ${
+                          t.isFreeEtf
+                            ? 'bg-green-900 text-green-300'
+                            : 'bg-orange-900 text-orange-300'
+                        }`}
+                      >
+                        {t.isFreeEtf ? 'FREE' : `€${(t.estimatedFeeCents / 100).toFixed(0)}`}
                       </span>
                       <p className="text-sm text-white truncate">{t.name.split('(')[0]?.trim()}</p>
                     </div>

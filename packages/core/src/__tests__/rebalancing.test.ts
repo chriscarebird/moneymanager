@@ -156,9 +156,11 @@ describe('computeRebalancingPlan — basic properties', () => {
     expect(plan.totalDeployedEurCents).toBeLessThanOrEqual(CASH);
   });
 
-  it('buy actions have estimatedFeeCents = DEGIRO_DEFAULT_FEE_CENTS', () => {
+  it('buy actions have estimatedFeeCents matching isFreeEtf (0 for free, 200 for paid)', () => {
+    const targetMap = new Map(TARGETS.map((t) => [t.etfIsin, t]));
     for (const action of plan.actions.filter((a) => a.action === 'buy')) {
-      expect(action.estimatedFeeCents).toBe(DEGIRO_DEFAULT_FEE_CENTS);
+      const isFree = targetMap.get(action.etfIsin)?.isFreeEtf ?? false;
+      expect(action.estimatedFeeCents).toBe(isFree ? 0 : DEGIRO_DEFAULT_FEE_CENTS);
     }
   });
 });

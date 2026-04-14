@@ -136,6 +136,9 @@ export function computeRebalancingPlan(
     });
   }
 
+  // Index targets by ISIN for fee lookup in the cash-allocation loop
+  const targetsByIsin = new Map(activeTargets.map((t) => [t.etfIsin, t]));
+
   // Allocate available cash to underweight positions only (no forced sells)
   // Calculate total shortfall across all underweight positions
   const underweightActions = actions.filter((a) => a.driftPct < 0);
@@ -199,7 +202,9 @@ export function computeRebalancingPlan(
     action.action = 'buy';
     action.amountEurCents = actualBuy;
     action.sharesDelta = shares;
-    action.estimatedFeeCents = DEGIRO_DEFAULT_FEE_CENTS;
+    // Free ETF (DeGiro core selection): first trade per month is free; charged otherwise
+    const isFreeEtf = targetsByIsin.get(action.etfIsin)?.isFreeEtf ?? false;
+    action.estimatedFeeCents = isFreeEtf ? 0 : DEGIRO_DEFAULT_FEE_CENTS;
     remainingCash -= actualBuy;
   }
 
