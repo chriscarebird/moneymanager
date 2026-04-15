@@ -115,6 +115,32 @@ export async function getLatestSnapshot(
 }
 
 /**
+ * Get portfolio value history — date + total value for each snapshot (oldest first).
+ * Used for the historical growth chart.
+ */
+export async function getSnapshotValueHistory(
+  client: Client,
+  userId: string,
+): Promise<{ date: string; totalValueCents: number }[]> {
+  const result = await client.execute({
+    sql: `
+      SELECT ps.date, COALESCE(SUM(h.value_cents), 0) AS total_value_cents
+      FROM portfolio_snapshots ps
+      LEFT JOIN holdings h ON h.snapshot_id = ps.id
+      WHERE ps.user_id = ?
+      GROUP BY ps.id, ps.date
+      ORDER BY ps.date ASC
+    `,
+    args: [userId],
+  });
+
+  return result.rows.map((row) => ({
+    date: row['date'] as string,
+    totalValueCents: Number(row['total_value_cents']),
+  }));
+}
+
+/**
  * Insert a new portfolio snapshot with its holdings.
  *
  * @param client - libsql client

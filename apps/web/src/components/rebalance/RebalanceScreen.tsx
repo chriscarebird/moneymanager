@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import type { PortfolioSnapshot, TargetAllocation } from '../../lib/api.js';
+import { useState, useEffect } from 'react';
+import type { PortfolioSnapshot, TargetAllocation, EtfScore } from '../../lib/api.js';
+import { api } from '../../lib/api.js';
 import { totalEtfEurCents, formatEur, formatPct } from '../../lib/calc.js';
 
 type Props = {
@@ -81,6 +82,17 @@ function computeTrades(
 export function RebalanceScreen({ snapshot, targets, cashCents, loading }: Props) {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [computed, setComputed] = useState(false);
+  const [etfScores, setEtfScores] = useState<Record<string, EtfScore>>({});
+
+  useEffect(() => {
+    const isins = targets.map((t) => t.etfIsin).filter(Boolean);
+    if (isins.length === 0) return;
+    api.getEtfScores(isins).then((scores) => {
+      const map: Record<string, EtfScore> = {};
+      for (const s of scores) map[s.isin] = s;
+      setEtfScores(map);
+    }).catch(() => { /* non-critical */ });
+  }, [targets]);
 
   function compute() {
     if (!snapshot) return;
@@ -231,6 +243,33 @@ export function RebalanceScreen({ snapshot, targets, cashCents, loading }: Props
                       {t.isin} · drift {t.driftPct > 0 ? '+' : ''}
                       {formatPct(t.driftPct, 1)}
                     </p>
+                    {etfScores[t.isin] && (
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                        {etfScores[t.isin]!.isCoreSelection && (
+                          <span className="text-[10px] bg-teal-900 text-teal-300 px-1 py-0.5 rounded">
+                            Core ✓
+                          </span>
+                        )}
+                        {etfScores[t.isin]!.typicalSpreadBps != null && (
+                          <span
+                            className={`text-[10px] px-1 py-0.5 rounded ${
+                              etfScores[t.isin]!.typicalSpreadBps! <= 5
+                                ? 'bg-green-900 text-green-300'
+                                : etfScores[t.isin]!.typicalSpreadBps! <= 15
+                                  ? 'bg-yellow-900 text-yellow-300'
+                                  : 'bg-red-900 text-red-300'
+                            }`}
+                          >
+                            Spread {etfScores[t.isin]!.typicalSpreadBps}bps
+                          </span>
+                        )}
+                        {etfScores[t.isin]!.avgDailyVolume != null && (
+                          <span className="text-[10px] bg-slate-700 text-slate-400 px-1 py-0.5 rounded">
+                            Vol {(etfScores[t.isin]!.avgDailyVolume! / 1_000_000).toFixed(1)}M
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <span className="text-sm font-semibold text-white">

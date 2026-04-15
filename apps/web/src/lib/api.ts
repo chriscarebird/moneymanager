@@ -113,6 +113,32 @@ export type AdviceResponse = {
   notes?: string;
 };
 
+export type TransactionHistory = {
+  id: string;
+  date: string;
+  action: 'buy' | 'sell';
+  asset: string;
+  isin: string;
+  quantity: number;
+  priceCents: number;
+  feeCents: number;
+  exchange: string;
+};
+
+export type SnapshotHistoryPoint = {
+  date: string;
+  totalValueCents: number;
+};
+
+export type EtfScore = {
+  isin: string;
+  name: string;
+  exchange: string;
+  isCoreSelection: boolean;
+  typicalSpreadBps: number | null;
+  avgDailyVolume: number | null;
+};
+
 export type NotificationPrefs = {
   tradingWindowEnabled: boolean;
   monthlyInvestmentEnabled: boolean;
@@ -216,6 +242,18 @@ export const api = {
   // ── Market data (Phase 2B) ────────────────────────────────────────────────
 
   getLivePrices: () => apiFetch<LivePrices>('/api/market/prices'),
+  getEtfScores: (isins: string[]) =>
+    apiFetch<EtfScore[]>(`/api/market/etf-scores?isins=${isins.join(',')}`),
+
+  // ── History & transactions (Phase 3) ─────────────────────────────────────
+  getSnapshotHistory: () =>
+    apiFetch<SnapshotHistoryPoint[]>('/api/portfolio/snapshots/history'),
+  getTransactions: () => apiFetch<TransactionHistory[]>('/api/portfolio/transactions'),
+  saveTransaction: (body: Omit<TransactionHistory, 'id'>) =>
+    apiFetch<{ id: string }>('/api/portfolio/transactions', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
 
   // ── Notifications (Phase 2C) ─────────────────────────────────────────────
 

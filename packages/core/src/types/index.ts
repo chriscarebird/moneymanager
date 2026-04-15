@@ -128,7 +128,10 @@ export interface TransactionHistory {
   id: string;
   date: string; // ISO 8601
   action: TransactionAction;
+  /** Asset name / ticker */
   asset: string;
+  /** ISIN — used for P&L matching against holdings (migration 0004) */
+  isin: string;
   quantity: number;
   /** Price per unit in cents */
   priceCents: number;

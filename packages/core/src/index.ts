@@ -64,6 +64,10 @@ export {
   MINIMUM_ORDER_EUR_CENTS,
 } from './calculations/rebalancing.js';
 
+// Calculations — performance / P&L
+export type { PositionPnL } from './calculations/performance.js';
+export { computePositionPnL } from './calculations/performance.js';
+
 // Calculations — fair use
 export type { FairUseStatus } from './calculations/fairuse.js';
 export {

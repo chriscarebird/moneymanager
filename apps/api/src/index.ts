@@ -12,6 +12,7 @@ import { notificationsRoutes } from './routes/notifications.js';
 import { transfersRoutes } from './routes/transfers.js';
 import { tradingWindowsRoutes } from './routes/tradingWindows.js';
 import { marketRoutes } from './routes/market.js';
+import { exportRoutes } from './routes/export.js';
 import { runSchedulerForAllUsers } from './services/notificationScheduler.js';
 import type { AppVariables } from './types.js';
 
@@ -66,6 +67,7 @@ app.use('/api/notifications/*', requireAuth);
 app.use('/api/transfers/*', requireAuth);
 app.use('/api/trading-windows/*', requireAuth);
 app.use('/api/market/*', requireAuth);
+app.use('/api/export/*', requireAuth);
 
 app.route('/api/portfolio', portfolioRoutes);
 app.route('/api/advice', adviceRoutes);
@@ -75,6 +77,7 @@ app.route('/api/notifications', notificationsRoutes);
 app.route('/api/transfers', transfersRoutes);
 app.route('/api/trading-windows', tradingWindowsRoutes);
 app.route('/api/market', marketRoutes);
+app.route('/api/export', exportRoutes);
 
 // ── 404 handler ──────────────────────────────────────────────────────────────
 
@@ -110,6 +113,12 @@ serve(
     runSchedulerForAllUsers().catch((err: unknown) => {
       console.error('Startup scheduler error:', err);
     });
+    // Re-run scheduler every 6 hours for drift/RSU/quarterly alerts
+    setInterval(() => {
+      runSchedulerForAllUsers().catch((err: unknown) => {
+        console.error('Cron scheduler error:', err);
+      });
+    }, 6 * 60 * 60 * 1000);
   },
 );
 

@@ -343,6 +343,29 @@ export function SettingsScreen({ targets, cash, onSaved }: Props) {
       {/* Push notifications */}
       <NotificationsSection />
 
+      {/* Data export */}
+      <div className="bg-slate-800 rounded-2xl p-5">
+        <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-3">
+          Export Data
+        </p>
+        <div className="space-y-2">
+          <a
+            href="/api/export/portfolio.csv"
+            download
+            className="flex w-full items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm py-2.5 rounded-xl transition-colors"
+          >
+            Download Portfolio CSV
+          </a>
+          <a
+            href="/api/export/transactions.csv"
+            download
+            className="flex w-full items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm py-2.5 rounded-xl transition-colors"
+          >
+            Download Transaction History CSV
+          </a>
+        </div>
+      </div>
+
       {/* Cash balance */}
       <div className="bg-slate-800 rounded-2xl p-5">
         <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-3">

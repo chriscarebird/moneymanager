@@ -1,12 +1,21 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
-import type { ApiResponse, PortfolioSnapshot, UberEquity, UberRSUGrant } from '@investpilot/core';
+import type {
+  ApiResponse,
+  PortfolioSnapshot,
+  UberEquity,
+  UberRSUGrant,
+  TransactionHistory,
+} from '@investpilot/core';
 import {
   getSnapshots,
   getSnapshotWithHoldings,
   getLatestSnapshot,
   insertSnapshot,
+  getSnapshotValueHistory,
+  getTransactionHistory,
+  insertTransaction,
   getUberEquity,
   getRSUGrants,
   upsertUberEquity,
@@ -46,6 +55,17 @@ const SaveUberEquitySchema = z.object({
       holdingPeriodActive: z.boolean(),
     }),
   ),
+});
+
+const SaveTransactionSchema = z.object({
+  date: z.string(),
+  action: z.enum(['buy', 'sell']),
+  asset: z.string().min(1),
+  isin: z.string().default(''),
+  quantity: z.number().int().positive(),
+  priceCents: z.number().int().nonnegative(),
+  feeCents: z.number().int().nonnegative().default(0),
+  exchange: z.string().default(''),
 });
 
 const SaveRSUGrantSchema = z.object({
@@ -89,6 +109,73 @@ portfolioRoutes.get('/snapshots/latest', async (c) => {
     const snapshot = await getLatestSnapshot(db, userId);
     const response: ApiResponse<PortfolioSnapshot | null> = { data: snapshot, error: null };
     return c.json(response, 200);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Database error';
+    return c.json({ data: null, error: message }, 500);
+  }
+});
+
+/**
+ * GET /api/portfolio/snapshots/history
+ * Returns (date, totalValueCents) pairs for the portfolio growth chart.
+ * IMPORTANT: must be defined before /snapshots/:id to avoid route collision.
+ */
+portfolioRoutes.get('/snapshots/history', async (c) => {
+  try {
+    const db = getDbClient();
+    const userId = c.get('userId');
+    const history = await getSnapshotValueHistory(db, userId);
+    const response: ApiResponse<typeof history> = { data: history, error: null };
+    return c.json(response, 200);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Database error';
+    return c.json({ data: null, error: message }, 500);
+  }
+});
+
+/**
+ * GET /api/portfolio/transactions
+ * List transaction history (most recent first).
+ */
+portfolioRoutes.get('/transactions', async (c) => {
+  try {
+    const db = getDbClient();
+    const userId = c.get('userId');
+    const txs = await getTransactionHistory(db, userId);
+    const response: ApiResponse<TransactionHistory[]> = { data: txs, error: null };
+    return c.json(response, 200);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Database error';
+    return c.json({ data: null, error: message }, 500);
+  }
+});
+
+/**
+ * POST /api/portfolio/transactions
+ * Record a new buy/sell transaction.
+ */
+portfolioRoutes.post('/transactions', async (c) => {
+  const raw: unknown = await c.req.json();
+  const parsed = SaveTransactionSchema.safeParse(raw);
+  if (!parsed.success) {
+    return c.json({ data: null, error: `Invalid request: ${parsed.error.message}` }, 400);
+  }
+  try {
+    const db = getDbClient();
+    const userId = c.get('userId');
+    const id = randomUUID();
+    await insertTransaction(db, userId, id, {
+      date: parsed.data.date,
+      action: parsed.data.action,
+      asset: parsed.data.asset,
+      isin: parsed.data.isin,
+      quantity: parsed.data.quantity,
+      priceCents: parsed.data.priceCents,
+      feeCents: parsed.data.feeCents,
+      exchange: parsed.data.exchange,
+    });
+    const response: ApiResponse<{ id: string }> = { data: { id }, error: null };
+    return c.json(response, 201);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Database error';
     return c.json({ data: null, error: message }, 500);

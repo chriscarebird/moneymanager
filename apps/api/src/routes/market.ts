@@ -7,7 +7,7 @@ import {
   fetchTickerPrices,
   ISIN_TO_TICKER,
 } from '../services/marketData.js';
-import { getLatestSnapshot } from '@investpilot/db';
+import { getLatestSnapshot, getDeGiroEtfScores } from '@investpilot/db';
 import { getDbClient } from '../db.js';
 import type { AppVariables } from '../types.js';
 
@@ -52,6 +52,26 @@ marketRoutes.get('/prices', async (c) => {
     return c.json(response, 200);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Market data error';
+    return c.json({ data: null, error: message }, 500);
+  }
+});
+
+/**
+ * GET /api/market/etf-scores?isins=ISIN1,ISIN2,...
+ * Returns DeGiro ETF scoring data (spread, volume, core selection) for the given ISINs.
+ */
+marketRoutes.get('/etf-scores', async (c) => {
+  const raw = c.req.query('isins');
+  if (!raw) {
+    return c.json({ data: [], error: null }, 200);
+  }
+  const isins = raw.split(',').map((s) => s.trim()).filter(Boolean);
+  try {
+    const db = getDbClient();
+    const scores = await getDeGiroEtfScores(db, isins);
+    return c.json({ data: scores, error: null }, 200);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Database error';
     return c.json({ data: null, error: message }, 500);
   }
 });

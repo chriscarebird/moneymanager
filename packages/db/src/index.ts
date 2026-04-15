@@ -27,7 +27,10 @@ export {
   getSnapshotWithHoldings,
   getLatestSnapshot,
   insertSnapshot,
+  getSnapshotValueHistory,
 } from './queries/portfolio.js';
+export { getTransactionHistory, insertTransaction } from './queries/transactions.js';
+export { getDeGiroEtfScores } from './queries/etfList.js';
 export { getUberEquity, getRSUGrants, upsertUberEquity, upsertRSUGrant } from './queries/uber.js';
 export {
   getPendingNotifications,

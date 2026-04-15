@@ -8,6 +8,8 @@ import {
   type CashBalance,
   type TradingWindow,
   type LivePrices,
+  type SnapshotHistoryPoint,
+  type TransactionHistory,
 } from '../lib/api.js';
 
 type AsyncState<T> = { data: T | null; loading: boolean; error: string | null };
@@ -61,6 +63,14 @@ export function useCashBalance() {
 
 export function useNextTradingWindow() {
   return useAsync<TradingWindow | null>(() => api.getNextTradingWindow());
+}
+
+export function useSnapshotHistory() {
+  return useAsync<SnapshotHistoryPoint[]>(() => api.getSnapshotHistory());
+}
+
+export function useTransactionHistory() {
+  return useAsync<TransactionHistory[]>(() => api.getTransactions());
 }
 
 /** Polls live market prices every 5 minutes. Pass null to skip. */

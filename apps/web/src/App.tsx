@@ -1,7 +1,9 @@
 import { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
-import { LayoutDashboard, Upload, RefreshCw, TrendingUp, Settings, Bot } from 'lucide-react';
+import { LayoutDashboard, Upload, RefreshCw, TrendingUp, Settings, Bot, BarChart2 } from 'lucide-react';
 import { UploadFlow } from './components/upload/UploadFlow.js';
 import { PortfolioValueCard } from './components/dashboard/PortfolioValueCard.js';
+import { PortfolioHistoryChart } from './components/dashboard/PortfolioHistoryChart.js';
+import { Box3Widget } from './components/dashboard/Box3Widget.js';
 import { AllocationDonut } from './components/dashboard/AllocationDonut.js';
 import { ConcentrationGauge } from './components/dashboard/ConcentrationGauge.js';
 import { VestingProjectionChart } from './components/dashboard/VestingProjectionChart.js';
@@ -11,6 +13,8 @@ import { RebalanceScreen } from './components/rebalance/RebalanceScreen.js';
 import { SettingsScreen } from './components/settings/SettingsScreen.js';
 import { AdvisorScreen } from './components/advisor/AdvisorScreen.js';
 import { TradingWindowFlow } from './components/advisor/TradingWindowFlow.js';
+import { PerformanceScreen } from './components/analytics/PerformanceScreen.js';
+import { OnboardingWizard } from './components/onboarding/OnboardingWizard.js';
 import {
   useLatestSnapshot,
   useUberEquity,
@@ -19,13 +23,16 @@ import {
   useCashBalance,
   useNextTradingWindow,
   useLivePrices,
+  useSnapshotHistory,
+  useTransactionHistory,
 } from './hooks/useData.js';
 import { api } from './lib/api.js';
+import { totalEtfEurCents, totalUberEurCents } from './lib/calc.js';
 import { registerSW } from './sw.js';
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
-function LoginScreen({ onLogin }: { onLogin: () => void }) {
+function LoginScreen({ onLogin }: { onLogin: (username: string) => void }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -45,7 +52,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
         const json = (await r.json()) as { error: string | null };
         if (!r.ok || json.error) throw new Error(json.error ?? 'Login failed');
       });
-      onLogin();
+      onLogin(username);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -99,19 +106,23 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
 // ── Main app shell ────────────────────────────────────────────────────────────
 
-type Tab = 'dashboard' | 'upload' | 'rebalance' | 'equity' | 'advisor' | 'settings';
+type Tab = 'dashboard' | 'upload' | 'rebalance' | 'equity' | 'advisor' | 'analytics' | 'settings';
 
 const TABS: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'dashboard', label: 'Home', icon: LayoutDashboard },
   { id: 'upload', label: 'Upload', icon: Upload },
   { id: 'rebalance', label: 'Rebalance', icon: RefreshCw },
   { id: 'equity', label: 'Equity', icon: TrendingUp },
   { id: 'advisor', label: 'Advisor', icon: Bot },
+  { id: 'analytics', label: 'Analytics', icon: BarChart2 },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
-function AppShell({ onLogout }: { onLogout: () => void }) {
+function AppShell({ userId, onLogout }: { userId: string; onLogout: () => void }) {
   const [tab, setTab] = useState<Tab>('dashboard');
+  const [onboardingDone, setOnboardingDone] = useState(
+    () => Boolean(localStorage.getItem(`investpilot_onboarded_${userId}`)),
+  );
 
   const snapshot = useLatestSnapshot();
   const equity = useUberEquity();
@@ -120,6 +131,8 @@ function AppShell({ onLogout }: { onLogout: () => void }) {
   const cash = useCashBalance();
   const tradingWindow = useNextTradingWindow();
   const livePrices = useLivePrices(true);
+  const snapshotHistory = useSnapshotHistory();
+  const transactions = useTransactionHistory();
 
   function refetchAll() {
     snapshot.refetch();
@@ -129,11 +142,26 @@ function AppShell({ onLogout }: { onLogout: () => void }) {
     cash.refetch();
     tradingWindow.refetch();
     livePrices.refetch();
+    snapshotHistory.refetch();
+    transactions.refetch();
   }
 
   const cashCents = cash.data?.amountCents ?? 0;
   // Use live FX rate if available, fall back to default
   const fxRate = livePrices.data?.fxRateUsdEur ?? 0.92;
+
+  // Onboarding detection: show wizard when no snapshot and no targets
+  const isLoaded = !snapshot.loading && !targets.loading;
+  const isNewUser =
+    isLoaded &&
+    !snapshot.data &&
+    (targets.data ?? []).length === 0 &&
+    !onboardingDone;
+
+  // Total portfolio value for Box 3 widget (ETF cents + equity converted to EUR)
+  const totalPortfolioEurCents =
+    (snapshot.data ? totalEtfEurCents(snapshot.data) : 0) +
+    totalUberEurCents(equity.data ?? [], fxRate);
 
   return (
     <div className="min-h-screen bg-slate-900 text-white flex flex-col">
@@ -155,6 +183,14 @@ function AppShell({ onLogout }: { onLogout: () => void }) {
         </div>
       </header>
 
+      {/* Onboarding wizard */}
+      {isNewUser && (
+        <OnboardingWizard
+          userId={userId}
+          onComplete={() => { setOnboardingDone(true); refetchAll(); }}
+        />
+      )}
+
       {/* Content — scrollable */}
       <main className="flex-1 overflow-y-auto px-4 pt-4 pb-24">
         {/* ── Dashboard ─────────────────────────────────────────────── */}
@@ -166,6 +202,8 @@ function AppShell({ onLogout }: { onLogout: () => void }) {
               livePrices={livePrices.data ?? null}
               fxRate={fxRate}
             />
+            <PortfolioHistoryChart history={snapshotHistory.data ?? []} />
+            <Box3Widget totalPortfolioEurCents={totalPortfolioEurCents} />
             <AllocationDonut snapshot={snapshot.data ?? null} targets={targets.data ?? []} />
             <ConcentrationGauge
               snapshot={snapshot.data ?? null}
@@ -224,6 +262,18 @@ function AppShell({ onLogout }: { onLogout: () => void }) {
           </div>
         )}
 
+        {/* ── Analytics ─────────────────────────────────────────────── */}
+        {tab === 'analytics' && (
+          <div className="max-w-lg mx-auto">
+            <PerformanceScreen
+              snapshot={snapshot.data ?? null}
+              transactions={transactions.data ?? []}
+              snapshotHistory={snapshotHistory.data ?? []}
+              loading={snapshot.loading || transactions.loading}
+            />
+          </div>
+        )}
+
         {/* ── Settings ──────────────────────────────────────────────── */}
         {tab === 'settings' && (
           <div className="max-w-lg mx-auto">
@@ -259,6 +309,7 @@ function AppShell({ onLogout }: { onLogout: () => void }) {
 
 export function App() {
   const [authed, setAuthed] = useState(false);
+  const [userId, setUserId] = useState('user1');
 
   async function checkAuth() {
     try {
@@ -276,8 +327,15 @@ export function App() {
   }, []);
 
   if (!authed) {
-    return <LoginScreen onLogin={() => setAuthed(true)} />;
+    return (
+      <LoginScreen
+        onLogin={(username) => {
+          setUserId(username);
+          setAuthed(true);
+        }}
+      />
+    );
   }
 
-  return <AppShell onLogout={() => setAuthed(false)} />;
+  return <AppShell userId={userId} onLogout={() => setAuthed(false)} />;
 }
