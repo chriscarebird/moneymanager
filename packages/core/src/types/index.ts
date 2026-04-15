@@ -157,6 +157,7 @@ export type NotificationType =
   | 'transfer_reminder'
   | 'monthly_review'
   | 'trading_window_open'
+  | 'trading_window_reminder'
   | 'trading_window_missing'
   | 'market_dip'
   | 'monthly_investment'

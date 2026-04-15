@@ -31,6 +31,7 @@ import {
 import {
   computeRebalancingPlan,
   getNextVestingEvent,
+  type NotificationType,
 } from '@investpilot/core';
 import { getDbClient } from '../db.js';
 import { sendPushToUser } from './pushSender.js';
@@ -42,7 +43,7 @@ export interface SchedulerResult {
 }
 
 /** Add business days to a date (Mon–Fri). */
-function addBusinessDays(date: Date, days: number): Date {
+export function addBusinessDays(date: Date, days: number): Date {
   const result = new Date(date);
   let added = 0;
   while (added < days) {
@@ -54,7 +55,7 @@ function addBusinessDays(date: Date, days: number): Date {
 }
 
 /** Return 09:00 CET (UTC+1 / UTC+2 in summer) as UTC for a given date. */
-function at9amCET(date: Date): Date {
+export function at9amCET(date: Date): Date {
   const d = new Date(date);
   d.setUTCHours(8, 0, 0, 0); // 09:00 CET = 08:00 UTC (winter)
   return d;
@@ -78,14 +79,14 @@ async function suppress(
 
 async function scheduleNotif(
   userId: string,
-  type: string,
+  type: NotificationType,
   scheduledDate: Date,
   message: string,
 ): Promise<void> {
   const db = getDbClient();
   await insertNotification(db, userId, {
     id: randomUUID(),
-    type: type as never, // runtime validation happens in DB CHECK
+    type,
     scheduledDate: scheduledDate.toISOString(),
     message,
   });
@@ -127,7 +128,7 @@ async function scheduleTraidingWindowAlerts(
     if (!(await isSuppressed(userId, 'trading_window_reminder'))) {
       await scheduleNotif(
         userId,
-        'trading_window_reminder' as never,
+        'trading_window_reminder',
         at9amCET(now),
         `Uber trading window opens in ${Math.ceil(daysToOpen)} day(s). Prepare to review your position.`,
       );
@@ -364,8 +365,10 @@ async function scheduleMarketDipAlert(
  * Run the full notification scheduler for a single user.
  * Safe to call repeatedly — uses INSERT OR IGNORE + suppressions.
  */
-export async function runSchedulerForUser(userId: string): Promise<SchedulerResult> {
-  const now = new Date();
+export async function runSchedulerForUser(
+  userId: string,
+  now: Date = new Date(),
+): Promise<SchedulerResult> {
   const result: SchedulerResult = { scheduled: [], pushed: [], skipped: [] };
 
   await Promise.allSettled([
