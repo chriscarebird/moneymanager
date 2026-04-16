@@ -59,7 +59,10 @@ export async function verifyCredentials(
   const user = users.find((u) => u.name === username);
   if (!user) return null;
 
-  const isValid = await bcrypt.compare(password, user.passwordHash);
+  const isBcryptHash = user.passwordHash.startsWith('$2');
+  const isValid = isBcryptHash
+    ? await bcrypt.compare(password, user.passwordHash)
+    : password === user.passwordHash;
   if (!isValid) return null;
 
   return { id: user.id, name: user.name };
