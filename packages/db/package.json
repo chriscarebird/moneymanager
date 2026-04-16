@@ -10,8 +10,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "migrate": "node --import tsx/esm src/migrate.ts",
-    "seed": "node --import tsx/esm src/seed.ts",
+    "migrate": "node --env-file=../../.env --import tsx/esm src/migrate.ts",
+    "seed": "node --env-file=../../.env --import tsx/esm src/seed.ts",
     "test": "vitest run --passWithNoTests",
     "test:unit": "vitest run --reporter=verbose --passWithNoTests",
     "lint": "eslint src --ext .ts"
