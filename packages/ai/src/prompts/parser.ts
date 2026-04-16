@@ -263,6 +263,15 @@ function normalizeVestingFormula(formula: string): string {
   return formula.trim();
 }
 
+// ── JSON extraction helper ────────────────────────────────────────────────────
+
+/** Strip markdown code fences if Claude wraps its JSON response in them. */
+function extractJSON(text: string): string {
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenced?.[1]) return fenced[1].trim();
+  return text.trim();
+}
+
 // ── Parser functions ──────────────────────────────────────────────────────────
 
 /**
@@ -315,7 +324,7 @@ export async function parseDeGiroScreenshot(
     throw new Error('No text response from Claude parser');
   }
 
-  const parsed: unknown = JSON.parse(textContent.text);
+  const parsed: unknown = JSON.parse(extractJSON(textContent.text));
   return ParsedPortfolioSchema.parse(parsed);
 }
 
@@ -367,7 +376,7 @@ export async function parseMorganStanleyScreenshot(
     throw new Error('No text response from Claude parser');
   }
 
-  const parsed: unknown = JSON.parse(textContent.text);
+  const parsed: unknown = JSON.parse(extractJSON(textContent.text));
   return ParsedMSHoldingsSchema.parse(parsed);
 }
 
@@ -436,7 +445,7 @@ export async function parseRSUGrantDocument(
     responseText = textBlock.text;
   }
 
-  const parsed: unknown = JSON.parse(responseText);
+  const parsed: unknown = JSON.parse(extractJSON(responseText));
   const result = ParsedRSUGrantSchema.parse(parsed);
 
   // Normalize dates to ISO 8601
