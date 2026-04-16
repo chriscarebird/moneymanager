@@ -97,8 +97,10 @@ export function OnboardingWizard({ userId, onComplete }: Props) {
     setMsg('');
     try {
       if (windowDate) {
-        const quarter = windowDate.slice(0, 7); // YYYY-MM
-        await api.saveTradingWindow({ quarter, openDate: windowDate });
+        const [year, month] = windowDate.split('-');
+        const quarter = `${year}-Q${Math.ceil(parseInt(month!) / 3)}`;
+        const openDate = `${windowDate}T00:00:00Z`;
+        await api.saveTradingWindow({ quarter, openDate });
       }
       next();
     } catch {
