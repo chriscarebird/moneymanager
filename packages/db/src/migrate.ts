@@ -14,16 +14,26 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 async function runMigrations(): Promise<void> {
-  const url = process.env['TURSO_DATABASE_URL'];
+  const rawUrl = process.env['TURSO_DATABASE_URL'];
   const authToken = process.env['TURSO_AUTH_TOKEN'];
 
-  if (!url) {
+  if (!rawUrl) {
     throw new Error('TURSO_DATABASE_URL environment variable is not set');
+  }
+
+  // Resolve relative file: paths to absolute so migrate and the API hit the same file
+  let url = rawUrl;
+  if (url.startsWith('file:') && !url.startsWith('file:///') && !url.startsWith('file://')) {
+    const filePath = url.slice(5);
+    if (!filePath.startsWith('/') && !/^[A-Za-z]:/.test(filePath)) {
+      const abs = resolve(process.cwd(), filePath).replace(/\\/g, '/');
+      url = `file:${abs}`;
+    }
   }
 
   console.warn('Connecting to database:', url);
 
-  const client = createClient({ url, ...(authToken !== undefined ? { authToken } : {}) });
+  const client = createClient({ url, ...(authToken ? { authToken } : {}) });
 
   // Ensure migrations table exists
   await client.execute(`
