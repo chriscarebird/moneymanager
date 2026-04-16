@@ -10,6 +10,13 @@ declare const self: ServiceWorkerGlobalScope;
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
 
+// Allow the waiting SW to become active immediately when the page requests it
+self.addEventListener('message', (event: ExtendableMessageEvent) => {
+  if ((event.data as { type?: string } | null)?.type === 'SKIP_WAITING') {
+    void self.skipWaiting();
+  }
+});
+
 // ── API cache: NetworkFirst, 1-hour TTL ──────────────────────────────────────
 
 registerRoute(

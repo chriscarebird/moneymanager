@@ -1,4 +1,4 @@
-import { serve } from '@hono/node-server';
+import { serve, serveStatic } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
@@ -78,6 +78,15 @@ app.route('/api/transfers', transfersRoutes);
 app.route('/api/trading-windows', tradingWindowsRoutes);
 app.route('/api/market', marketRoutes);
 app.route('/api/export', exportRoutes);
+
+// ── Serve web SPA static files in production ─────────────────────────────────
+// In Docker, apps/web/dist is copied alongside the API at ../web/dist
+
+if (process.env['NODE_ENV'] === 'production') {
+  app.use('/*', serveStatic({ root: '../web/dist' }));
+  // SPA fallback: serve index.html for any non-asset path
+  app.use('/*', serveStatic({ path: '../web/dist/index.html' }));
+}
 
 // ── 404 handler ──────────────────────────────────────────────────────────────
 
