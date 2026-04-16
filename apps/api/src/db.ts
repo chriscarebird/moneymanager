@@ -1,15 +1,19 @@
 import { createClient, type Client } from '@libsql/client';
-import { resolve } from 'path';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+// Repo root is 3 levels up from apps/api/src/db.ts
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
 let _client: Client | null = null;
 
-/** Resolve a relative file: URL to an absolute path so the same DB file is
- *  used regardless of which directory the process was started from. */
+/** Resolve a relative file: URL against the repo root so migrate and the
+ *  API always connect to the same database file. */
 function resolveDbUrl(url: string): string {
   if (url.startsWith('file:') && !url.startsWith('file:///') && !url.startsWith('file://')) {
-    const filePath = url.slice(5); // strip 'file:'
+    const filePath = url.slice(5);
     if (!filePath.startsWith('/') && !/^[A-Za-z]:/.test(filePath)) {
-      const abs = resolve(process.cwd(), filePath).replace(/\\/g, '/');
+      const abs = resolve(REPO_ROOT, filePath).replace(/\\/g, '/');
       return `file:${abs}`;
     }
   }

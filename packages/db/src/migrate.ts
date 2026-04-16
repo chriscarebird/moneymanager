@@ -21,12 +21,14 @@ async function runMigrations(): Promise<void> {
     throw new Error('TURSO_DATABASE_URL environment variable is not set');
   }
 
-  // Resolve relative file: paths to absolute so migrate and the API hit the same file
+  // Resolve relative file: paths against the repo root (3 levels up from packages/db/src/)
+  // so migrate and the API always connect to the same database file.
   let url = rawUrl;
   if (url.startsWith('file:') && !url.startsWith('file:///') && !url.startsWith('file://')) {
     const filePath = url.slice(5);
     if (!filePath.startsWith('/') && !/^[A-Za-z]:/.test(filePath)) {
-      const abs = resolve(process.cwd(), filePath).replace(/\\/g, '/');
+      const repoRoot = resolve(__dirname, '../../..');
+      const abs = resolve(repoRoot, filePath).replace(/\\/g, '/');
       url = `file:${abs}`;
     }
   }
