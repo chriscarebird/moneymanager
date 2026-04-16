@@ -10,8 +10,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "migrate": "node --loader ts-node/esm src/migrate.ts",
-    "seed": "node --loader ts-node/esm src/seed.ts",
+    "migrate": "node --import tsx/esm src/migrate.ts",
+    "seed": "node --import tsx/esm src/seed.ts",
     "test": "vitest run --passWithNoTests",
     "test:unit": "vitest run --reporter=verbose --passWithNoTests",
     "lint": "eslint src --ext .ts"
@@ -23,6 +23,7 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.5.0",
     "vitest": "^2.0.0"
   }
