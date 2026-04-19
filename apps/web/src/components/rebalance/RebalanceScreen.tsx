@@ -195,6 +195,34 @@ export function RebalanceScreen({ snapshot, targets, cashCents, loading }: Props
         </div>
       )}
 
+      {/* Unmatched holdings diagnostic */}
+      {computed && (() => {
+        const activeIsins = new Set(targets.filter((t) => t.active).map((t) => t.etfIsin));
+        const unmatched = snapshot.holdings.filter((h) => !activeIsins.has(h.isin));
+        if (unmatched.length === 0) return null;
+        return (
+          <div className="bg-amber-900/30 border border-amber-700/50 rounded-2xl p-5">
+            <p className="text-amber-400 text-xs font-medium uppercase tracking-wide mb-2">
+              Untracked Holdings
+            </p>
+            <p className="text-amber-300/70 text-xs mb-3">
+              These holdings don't match any active target ISIN — update the ISIN in Settings to include them.
+            </p>
+            <div className="space-y-1.5">
+              {unmatched.map((h) => (
+                <div key={h.isin} className="flex items-center justify-between text-xs">
+                  <div>
+                    <p className="text-white">{h.name.split(' ').slice(0, 4).join(' ')}</p>
+                    <p className="text-slate-400 font-mono">{h.isin}</p>
+                  </div>
+                  <span className="text-slate-300">{formatEur(h.valueCents)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Trade list */}
       {computed && trades.length === 0 && (
         <div className="bg-slate-800 rounded-2xl p-5 text-center">

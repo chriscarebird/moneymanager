@@ -161,6 +161,7 @@ export function SettingsScreen({ targets, cash, onSaved }: Props) {
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editPct, setEditPct] = useState('');
+  const [editIsin, setEditIsin] = useState('');
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
 
@@ -209,9 +210,14 @@ export function SettingsScreen({ targets, cash, onSaved }: Props) {
       setMsg('Invalid %');
       return;
     }
+    const isin = editIsin.trim().toUpperCase();
+    if (!isin || isin.length < 10) {
+      setMsg('Invalid ISIN');
+      return;
+    }
     setSaving(true);
     try {
-      await api.saveTarget({ ...target, targetPct: pct });
+      await api.saveTarget({ ...target, targetPct: pct, etfIsin: isin });
       setMsg('Saved');
       setEditingId(null);
       onSaved();
@@ -412,30 +418,43 @@ export function SettingsScreen({ targets, cash, onSaved }: Props) {
               className={`py-2 border-b border-slate-700 last:border-0 ${!t.active ? 'opacity-40' : ''}`}
             >
               {editingId === t.id ? (
-                <div className="flex items-center gap-2">
-                  <p className="flex-1 text-sm text-white truncate">
-                    {t.etfName.split('(')[0]?.trim()}
-                  </p>
-                  <input
-                    type="number"
-                    value={editPct}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setEditPct(e.target.value)}
-                    className="w-16 bg-slate-600 rounded px-2 py-1 text-white text-sm text-right"
-                  />
-                  <span className="text-slate-400 text-sm">%</span>
-                  <button
-                    onClick={() => saveAllocation(t)}
-                    disabled={saving}
-                    className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded"
-                  >
-                    {saving ? '…' : 'Save'}
-                  </button>
-                  <button
-                    onClick={() => setEditingId(null)}
-                    className="text-xs text-slate-500 hover:text-white px-1"
-                  >
-                    ✕
-                  </button>
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <p className="flex-1 text-sm text-white truncate">
+                      {t.etfName.split('(')[0]?.trim()}
+                    </p>
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="text-xs text-slate-500 hover:text-white px-1"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <input
+                      type="text"
+                      value={editIsin}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        setEditIsin(e.target.value.toUpperCase())
+                      }
+                      placeholder="ISIN"
+                      className="w-32 bg-slate-600 rounded px-2 py-1 text-white text-xs font-mono"
+                    />
+                    <input
+                      type="number"
+                      value={editPct}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => setEditPct(e.target.value)}
+                      className="w-16 bg-slate-600 rounded px-2 py-1 text-white text-sm text-right"
+                    />
+                    <span className="text-slate-400 text-sm">%</span>
+                    <button
+                      onClick={() => saveAllocation(t)}
+                      disabled={saving}
+                      className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded"
+                    >
+                      {saving ? '…' : 'Save'}
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="flex items-center justify-between">
@@ -454,6 +473,7 @@ export function SettingsScreen({ targets, cash, onSaved }: Props) {
                       onClick={() => {
                         setEditingId(t.id);
                         setEditPct(String(t.targetPct));
+                        setEditIsin(t.etfIsin);
                         setMsg('');
                       }}
                       className="text-xs text-slate-500 hover:text-blue-400"
