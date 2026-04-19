@@ -258,28 +258,40 @@ portfolioRoutes.post('/uber', async (c) => {
   try {
     const db = getDbClient();
     const userId = c.get('userId');
+
+    // Aggregate multiple rows of the same type (e.g. two ESPP rows → one summed row).
+    // The DB enforces uniqueness on (user_id, type), so we must collapse duplicates here.
+    const aggregated = new Map<string, UberEquity>();
+    for (const equity of parsed.data.equity) {
+      const existing = aggregated.get(equity.type);
+      if (existing) {
+        aggregated.set(equity.type, {
+          type: equity.type,
+          sharesHeld: existing.sharesHeld + equity.sharesHeld,
+          sharesAvailableToTransact: existing.sharesAvailableToTransact + equity.sharesAvailableToTransact,
+          marketValueUsdCents: existing.marketValueUsdCents + equity.marketValueUsdCents,
+          holdingPeriodActive: existing.holdingPeriodActive || equity.holdingPeriodActive,
+        });
+      } else {
+        aggregated.set(equity.type, { ...equity });
+      }
+    }
+
     const errors: string[] = [];
     let saved = 0;
-    for (const equity of parsed.data.equity) {
-      const position: UberEquity = {
-        type: equity.type,
-        sharesHeld: equity.sharesHeld,
-        sharesAvailableToTransact: equity.sharesAvailableToTransact,
-        marketValueUsdCents: equity.marketValueUsdCents,
-        holdingPeriodActive: equity.holdingPeriodActive,
-      };
+    for (const position of aggregated.values()) {
       try {
         await upsertUberEquity(db, userId, position);
         saved++;
       } catch (itemErr) {
         const msg = itemErr instanceof Error ? itemErr.message : 'Unknown error';
-        errors.push(`${equity.type}: ${msg}`);
+        errors.push(`${position.type}: ${msg}`);
       }
     }
     if (errors.length > 0) {
       const response: ApiResponse<{ saved: number }> = {
         data: { saved },
-        error: `Saved ${saved}/${parsed.data.equity.length} positions. Failures: ${errors.join('; ')}`,
+        error: `Saved ${saved}/${aggregated.size} positions. Failures: ${errors.join('; ')}`,
       };
       return c.json(response, 207);
     }
