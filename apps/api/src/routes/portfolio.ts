@@ -258,6 +258,8 @@ portfolioRoutes.post('/uber', async (c) => {
   try {
     const db = getDbClient();
     const userId = c.get('userId');
+    const errors: string[] = [];
+    let saved = 0;
     for (const equity of parsed.data.equity) {
       const position: UberEquity = {
         type: equity.type,
@@ -266,10 +268,23 @@ portfolioRoutes.post('/uber', async (c) => {
         marketValueUsdCents: equity.marketValueUsdCents,
         holdingPeriodActive: equity.holdingPeriodActive,
       };
-      await upsertUberEquity(db, userId, position);
+      try {
+        await upsertUberEquity(db, userId, position);
+        saved++;
+      } catch (itemErr) {
+        const msg = itemErr instanceof Error ? itemErr.message : 'Unknown error';
+        errors.push(`${equity.type}: ${msg}`);
+      }
+    }
+    if (errors.length > 0) {
+      const response: ApiResponse<{ saved: number }> = {
+        data: { saved },
+        error: `Saved ${saved}/${parsed.data.equity.length} positions. Failures: ${errors.join('; ')}`,
+      };
+      return c.json(response, 207);
     }
     const response: ApiResponse<{ saved: number }> = {
-      data: { saved: parsed.data.equity.length },
+      data: { saved },
       error: null,
     };
     return c.json(response, 200);

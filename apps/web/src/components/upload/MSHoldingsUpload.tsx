@@ -86,14 +86,22 @@ export function MSHoldingsUpload({ onSaved }: Props) {
         credentials: 'include',
       });
       const json = (await res.json()) as { data: { saved: number } | null; error: string | null };
-      if (!res.ok || json.error) {
+      const savedCount = json.data?.saved ?? 0;
+      const attempted = equity.length;
+      if (res.status === 207 && json.error) {
+        // Partial save — some positions failed
+        setStatus('error');
+        setMessage(json.error);
+        onSaved?.(); // still refresh so successfully-saved items appear
+      } else if (!res.ok || json.error) {
         throw new Error(json.error ?? 'Save failed');
+      } else {
+        setStatus('success');
+        setMessage(`Saved ${savedCount}/${attempted} equity position(s) successfully.`);
+        setParsed(null);
+        setEquity([]);
+        onSaved?.();
       }
-      setStatus('success');
-      setMessage(`Saved ${json.data?.saved ?? 0} equity position(s) successfully.`);
-      setParsed(null);
-      setEquity([]);
-      onSaved?.();
     } catch (err) {
       setStatus('error');
       setMessage(err instanceof Error ? err.message : 'Failed to save');

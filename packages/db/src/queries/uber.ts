@@ -117,18 +117,11 @@ export async function upsertUberEquity(
   userId: string,
   equity: UberEquity,
 ): Promise<void> {
-  // TODO Phase 2: implement
   await client.execute({
     sql: `
-      INSERT INTO uber_equity
-        (user_id, type, shares_held, shares_available_to_transact, market_value_usd_cents, holding_period_active)
-      VALUES (?, ?, ?, ?, ?, ?)
-      ON CONFLICT (user_id, type) DO UPDATE SET
-        shares_held = excluded.shares_held,
-        shares_available_to_transact = excluded.shares_available_to_transact,
-        market_value_usd_cents = excluded.market_value_usd_cents,
-        holding_period_active = excluded.holding_period_active,
-        updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+      INSERT OR REPLACE INTO uber_equity
+        (user_id, type, shares_held, shares_available_to_transact, market_value_usd_cents, holding_period_active, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     `,
     args: [
       userId,
