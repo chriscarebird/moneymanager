@@ -191,6 +191,31 @@ export interface DeGiroETFList {
   avgDailyVolume: number | null;
 }
 
+// ── Morgan Stanley Snapshot History ──────────────────────────────────────────
+
+export interface MSSnapshotHistoryPoint {
+  date: string;       // YYYY-MM-DD
+  totalUsdCents: number;
+}
+
+// ── RSU Vesting Events ────────────────────────────────────────────────────────
+
+export type VestingEventStatus = 'upcoming' | 'vested' | 'cancelled';
+
+export interface VestingEventRow {
+  id: string;
+  grantId: string;
+  vestingDate: string;           // YYYY-MM-DD
+  sharesVesting: number;
+  incomeTaxRate: number;         // 0.0–1.0
+  priceUsdCents: number | null;  // filled when marking as vested
+  actualSharesReceived: number | null;
+  status: VestingEventStatus;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ── DeGiro Monthly Trade Tracker ──────────────────────────────────────────────
 
 export type TradeDirection = 'buy' | 'sell';

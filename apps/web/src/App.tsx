@@ -25,6 +25,7 @@ import {
   useLivePrices,
   useSnapshotHistory,
   useTransactionHistory,
+  useMSSnapshotHistory,
 } from './hooks/useData.js';
 import { api } from './lib/api.js';
 import { totalEtfEurCents, totalUberEurCents } from './lib/calc.js';
@@ -133,6 +134,7 @@ function AppShell({ userId, onLogout }: { userId: string; onLogout: () => void }
   const livePrices = useLivePrices(true);
   const snapshotHistory = useSnapshotHistory();
   const transactions = useTransactionHistory();
+  const msHistory = useMSSnapshotHistory();
 
   function refetchAll() {
     snapshot.refetch();
@@ -144,6 +146,7 @@ function AppShell({ userId, onLogout }: { userId: string; onLogout: () => void }
     livePrices.refetch();
     snapshotHistory.refetch();
     transactions.refetch();
+    msHistory.refetch();
   }
 
   const cashCents = cash.data?.amountCents ?? 0;
@@ -245,7 +248,9 @@ function AppShell({ userId, onLogout }: { userId: string; onLogout: () => void }
             <EquityScreen
               equity={equity.data ?? []}
               grants={grants.data ?? []}
+              msHistory={msHistory.data ?? []}
               loading={equity.loading || grants.loading}
+              onVestingUpdated={grants.refetch}
             />
           </div>
         )}

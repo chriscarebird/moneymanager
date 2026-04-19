@@ -10,6 +10,8 @@ import {
   type LivePrices,
   type SnapshotHistoryPoint,
   type TransactionHistory,
+  type MSSnapshotHistoryPoint,
+  type VestingEventRow,
 } from '../lib/api.js';
 
 type AsyncState<T> = { data: T | null; loading: boolean; error: string | null };
@@ -71,6 +73,14 @@ export function useSnapshotHistory() {
 
 export function useTransactionHistory() {
   return useAsync<TransactionHistory[]>(() => api.getTransactions());
+}
+
+export function useMSSnapshotHistory() {
+  return useAsync<MSSnapshotHistoryPoint[]>(() => api.getMSSnapshotHistory());
+}
+
+export function useVestingEvents(grantId: string) {
+  return useAsync<VestingEventRow[]>(() => api.getVestingEvents(grantId), [grantId]);
 }
 
 /** Polls live market prices every 5 minutes. Pass null to skip. */

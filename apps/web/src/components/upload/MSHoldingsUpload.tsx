@@ -19,6 +19,10 @@ function formatUsdCents(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -38,6 +42,7 @@ export function MSHoldingsUpload({ onSaved }: Props) {
   const [message, setMessage] = useState('');
   const [parsed, setParsed] = useState<ParsedMSHoldings | null>(null);
   const [equity, setEquity] = useState<ParsedMSEquity[]>([]);
+  const [snapshotDate, setSnapshotDate] = useState(todayISO);
   const [saving, setSaving] = useState(false);
 
   async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
@@ -79,29 +84,25 @@ export function MSHoldingsUpload({ onSaved }: Props) {
     setMessage('Saving to database...');
 
     try {
-      const res = await fetch('/api/portfolio/uber', {
+      const res = await fetch('/api/portfolio/ms-snapshots', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ equity }),
+        body: JSON.stringify({ snapshotDate, equity }),
         credentials: 'include',
       });
-      const json = (await res.json()) as { data: { saved: number } | null; error: string | null };
-      const savedCount = json.data?.saved ?? 0;
-      const attempted = equity.length;
-      if (res.status === 207 && json.error) {
-        // Partial save — some positions failed
-        setStatus('error');
-        setMessage(json.error);
-        onSaved?.(); // still refresh so successfully-saved items appear
-      } else if (!res.ok || json.error) {
+      const json = (await res.json()) as {
+        data: { snapshotId: string; saved: number } | null;
+        error: string | null;
+      };
+      if (!res.ok || json.error) {
         throw new Error(json.error ?? 'Save failed');
-      } else {
-        setStatus('success');
-        setMessage(`Saved ${savedCount}/${attempted} equity position(s) successfully.`);
-        setParsed(null);
-        setEquity([]);
-        onSaved?.();
       }
+      setStatus('success');
+      setMessage(`Saved snapshot with ${json.data?.saved ?? 0} equity position(s).`);
+      setParsed(null);
+      setEquity([]);
+      setSnapshotDate(todayISO());
+      onSaved?.();
     } catch (err) {
       setStatus('error');
       setMessage(err instanceof Error ? err.message : 'Failed to save');
@@ -151,6 +152,18 @@ export function MSHoldingsUpload({ onSaved }: Props) {
               Parser confidence: {Math.round(parsed.confidence * 100)}%
             </p>
           )}
+
+          {/* Snapshot date — defaults to today, user can adjust for historical uploads */}
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">Snapshot date</label>
+            <input
+              type="date"
+              value={snapshotDate}
+              onChange={(e) => setSnapshotDate(e.target.value)}
+              className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
           <div className="space-y-3">
             {equity.map((e, i) => (
               <div key={i} className="bg-slate-700 rounded-lg p-4 space-y-2">

@@ -23,6 +23,9 @@ export type {
   DeGiroMonthlyTradeTracker,
   MonthlyTrade,
   TradeDirection,
+  MSSnapshotHistoryPoint,
+  VestingEventStatus,
+  VestingEventRow,
 } from './types/index.js';
 
 export type { ApiResponse } from './types/api.js';
@@ -32,6 +35,7 @@ export type {
   VestingEvent,
   VestingSchedule,
   VestingFormulaParams,
+  VestingEventInsert,
 } from './calculations/vesting.js';
 export {
   parseVestingFormula,
@@ -40,6 +44,8 @@ export {
   stackVestingSchedules,
   getVestedCount,
   getNextVestingEvent,
+  generateVestingEvents,
+  computePredictedTax,
 } from './calculations/vesting.js';
 
 // Calculations — concentration

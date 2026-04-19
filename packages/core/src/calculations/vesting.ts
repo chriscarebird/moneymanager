@@ -165,3 +165,55 @@ export function getNextVestingEvent(grant: UberRSUGrant, afterDate: string): Ves
   const schedule = computeVestingSchedule(grant, afterDate);
   return schedule.events.find((e) => e.isFuture) ?? null;
 }
+
+/** Minimal shape used when inserting generated events into the DB. */
+export interface VestingEventInsert {
+  /** ISO 8601 date string (YYYY-MM-DD) */
+  vestingDate: string;
+  sharesVesting: number;
+  incomeTaxRate: number;
+}
+
+/**
+ * Derive the full list of vesting event rows from a grant's formula.
+ * These are ready to insert into rsu_vesting_events; no price is known
+ * at generation time.
+ *
+ * @param grant - The RSU grant
+ * @param defaultTaxRate - Predicted income tax rate (default: 49.5% Dutch top rate)
+ */
+export function generateVestingEvents(
+  grant: UberRSUGrant,
+  defaultTaxRate = 0.495,
+): VestingEventInsert[] {
+  const schedule = computeVestingSchedule(grant);
+  return schedule.events.map((ev) => ({
+    vestingDate: ev.date.slice(0, 10), // YYYY-MM-DD
+    sharesVesting: ev.sharesVesting,
+    incomeTaxRate: defaultTaxRate,
+  }));
+}
+
+/**
+ * Compute predicted tax figures for a single vesting event.
+ * All money values in USD cents.
+ *
+ * @returns grossValueUsdCents, taxUsdCents, predictedNetShares, netValueUsdCents
+ */
+export function computePredictedTax(
+  sharesVesting: number,
+  priceUsdCents: number,
+  incomeTaxRate: number,
+): {
+  grossValueUsdCents: number;
+  taxUsdCents: number;
+  predictedNetShares: number;
+  netValueUsdCents: number;
+} {
+  const grossValueUsdCents = sharesVesting * priceUsdCents;
+  const taxUsdCents = Math.round(grossValueUsdCents * incomeTaxRate);
+  // Shares withheld = floor(sharesVesting × taxRate), remainder paid as cash
+  const predictedNetShares = sharesVesting - Math.floor(sharesVesting * incomeTaxRate);
+  const netValueUsdCents = grossValueUsdCents - taxUsdCents;
+  return { grossValueUsdCents, taxUsdCents, predictedNetShares, netValueUsdCents };
+}

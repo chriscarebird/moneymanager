@@ -69,3 +69,19 @@ export {
   upsertAlertSuppression,
 } from './queries/pushSubscriptions.js';
 export type { PushSubscription } from './queries/pushSubscriptions.js';
+export {
+  insertMSSnapshot,
+  getMSSnapshotHistory,
+  getLatestMSSnapshot,
+} from './queries/msSnapshots.js';
+export type {
+  MSEquitySnapshot,
+  MSEquitySnapshotItem,
+  MSEquityInput,
+} from './queries/msSnapshots.js';
+export {
+  generateAndInsertVestingEvents,
+  getVestingEvents,
+  updateVestingEvent,
+} from './queries/vestingEvents.js';
+export type { VestingEventPatch } from './queries/vestingEvents.js';

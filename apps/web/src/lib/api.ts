@@ -130,6 +130,27 @@ export type SnapshotHistoryPoint = {
   totalValueCents: number;
 };
 
+export type MSSnapshotHistoryPoint = {
+  date: string;
+  totalUsdCents: number;
+};
+
+export type VestingEventStatus = 'upcoming' | 'vested' | 'cancelled';
+
+export type VestingEventRow = {
+  id: string;
+  grantId: string;
+  vestingDate: string;
+  sharesVesting: number;
+  incomeTaxRate: number;
+  priceUsdCents: number | null;
+  actualSharesReceived: number | null;
+  status: VestingEventStatus;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type EtfScore = {
   isin: string;
   name: string;
@@ -253,6 +274,33 @@ export const api = {
     apiFetch<{ id: string }>('/api/portfolio/transactions', {
       method: 'POST',
       body: JSON.stringify(body),
+    }),
+
+  // ── MS Equity Snapshot History ───────────────────────────────────────────
+  saveMSSnapshot: (body: { snapshotDate: string; equity: UberEquity[] }) =>
+    apiFetch<{ snapshotId: string; saved: number }>('/api/portfolio/ms-snapshots', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  getMSSnapshotHistory: () =>
+    apiFetch<MSSnapshotHistoryPoint[]>('/api/portfolio/ms-snapshots/history'),
+
+  // ── RSU Vesting Events ───────────────────────────────────────────────────
+  getVestingEvents: (grantId: string) =>
+    apiFetch<VestingEventRow[]>(`/api/portfolio/rsu-grants/${grantId}/vesting-events`),
+  updateVestingEvent: (
+    grantId: string,
+    eventId: string,
+    patch: Partial<Pick<VestingEventRow, 'incomeTaxRate' | 'priceUsdCents' | 'actualSharesReceived' | 'status' | 'notes'>>,
+  ) =>
+    apiFetch<{ updated: true }>(`/api/portfolio/rsu-grants/${grantId}/vesting-events/${eventId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+  regenerateVestingEvents: (grantId: string) =>
+    apiFetch<VestingEventRow[]>(`/api/portfolio/rsu-grants/${grantId}/vesting-events/regenerate`, {
+      method: 'POST',
+      body: '{}',
     }),
 
   // ── Notifications (Phase 2C) ─────────────────────────────────────────────

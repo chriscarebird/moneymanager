@@ -7,6 +7,8 @@ import type {
   UberEquity,
   UberRSUGrant,
   TransactionHistory,
+  MSSnapshotHistoryPoint,
+  VestingEventRow,
 } from '@investpilot/core';
 import {
   getSnapshots,
@@ -20,7 +22,13 @@ import {
   getRSUGrants,
   upsertUberEquity,
   upsertRSUGrant,
+  insertMSSnapshot,
+  getMSSnapshotHistory,
+  generateAndInsertVestingEvents,
+  getVestingEvents,
+  updateVestingEvent,
 } from '@investpilot/db';
+import type { VestingEventPatch } from '@investpilot/db';
 import { getDbClient } from '../db.js';
 import type { AppVariables } from '../types.js';
 
@@ -335,6 +343,8 @@ portfolioRoutes.post('/rsu-grant', async (c) => {
       status: parsed.data.status,
     };
     await upsertRSUGrant(db, userId, grant);
+    // Auto-generate (or regenerate) vesting events from the grant formula
+    await generateAndInsertVestingEvents(db, userId, grant);
     const response: ApiResponse<{ grantId: string }> = {
       data: { grantId: grant.grantId },
       error: null,
@@ -374,6 +384,168 @@ portfolioRoutes.get('/rsu-grants', async (c) => {
     const userId = c.get('userId');
     const grants = await getRSUGrants(db, userId);
     const response: ApiResponse<UberRSUGrant[]> = { data: grants, error: null };
+    return c.json(response, 200);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Database error';
+    return c.json({ data: null, error: message }, 500);
+  }
+});
+
+// ── MS Equity Snapshot History ────────────────────────────────────────────────
+
+const SaveMSSnapshotSchema = z.object({
+  snapshotDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'snapshotDate must be YYYY-MM-DD'),
+  equity: z.array(
+    z.object({
+      type: z.enum(['RSU', 'ESPP', 'Direct_Shares']),
+      sharesHeld: z.number().int().nonnegative(),
+      sharesAvailableToTransact: z.number().int().nonnegative(),
+      marketValueUsdCents: z.number().int().nonnegative(),
+      holdingPeriodActive: z.boolean(),
+    }),
+  ),
+});
+
+/**
+ * POST /api/portfolio/ms-snapshots
+ * Save a confirmed MS screenshot as an immutable snapshot (history) and
+ * also update uber_equity with the aggregated current state.
+ */
+portfolioRoutes.post('/ms-snapshots', async (c) => {
+  const raw: unknown = await c.req.json();
+  const parsed = SaveMSSnapshotSchema.safeParse(raw);
+  if (!parsed.success) {
+    return c.json({ data: null, error: `Invalid request: ${parsed.error.message}` }, 400);
+  }
+
+  try {
+    const db = getDbClient();
+    const userId = c.get('userId');
+
+    // Aggregate duplicate types before saving
+    const aggregated = new Map<string, (typeof parsed.data.equity)[number]>();
+    for (const item of parsed.data.equity) {
+      const existing = aggregated.get(item.type);
+      if (existing) {
+        aggregated.set(item.type, {
+          ...existing,
+          sharesHeld: existing.sharesHeld + item.sharesHeld,
+          sharesAvailableToTransact: existing.sharesAvailableToTransact + item.sharesAvailableToTransact,
+          marketValueUsdCents: existing.marketValueUsdCents + item.marketValueUsdCents,
+          holdingPeriodActive: existing.holdingPeriodActive || item.holdingPeriodActive,
+        });
+      } else {
+        aggregated.set(item.type, { ...item });
+      }
+    }
+
+    const items = Array.from(aggregated.values());
+
+    // Save immutable snapshot
+    const snapshotId = await insertMSSnapshot(db, userId, parsed.data.snapshotDate, items);
+
+    // Update current-state table
+    for (const item of items) {
+      await upsertUberEquity(db, userId, item as UberEquity);
+    }
+
+    const response: ApiResponse<{ snapshotId: string; saved: number }> = {
+      data: { snapshotId, saved: items.length },
+      error: null,
+    };
+    return c.json(response, 200);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Database error';
+    return c.json({ data: null, error: message }, 500);
+  }
+});
+
+/**
+ * GET /api/portfolio/ms-snapshots/history
+ * Time-series of total MS equity value for the chart.
+ */
+portfolioRoutes.get('/ms-snapshots/history', async (c) => {
+  try {
+    const db = getDbClient();
+    const userId = c.get('userId');
+    const history = await getMSSnapshotHistory(db, userId);
+    const response: ApiResponse<MSSnapshotHistoryPoint[]> = { data: history, error: null };
+    return c.json(response, 200);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Database error';
+    return c.json({ data: null, error: message }, 500);
+  }
+});
+
+// ── RSU Vesting Events ────────────────────────────────────────────────────────
+
+/**
+ * GET /api/portfolio/rsu-grants/:grantId/vesting-events
+ * List all vesting events for a specific grant.
+ */
+portfolioRoutes.get('/rsu-grants/:grantId/vesting-events', async (c) => {
+  try {
+    const db = getDbClient();
+    const userId = c.get('userId');
+    const grantId = c.req.param('grantId');
+    const events = await getVestingEvents(db, userId, grantId);
+    const response: ApiResponse<VestingEventRow[]> = { data: events, error: null };
+    return c.json(response, 200);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Database error';
+    return c.json({ data: null, error: message }, 500);
+  }
+});
+
+const PatchVestingEventSchema = z.object({
+  incomeTaxRate: z.number().min(0).max(1).optional(),
+  priceUsdCents: z.number().int().nonnegative().nullable().optional(),
+  actualSharesReceived: z.number().int().nonnegative().nullable().optional(),
+  status: z.enum(['upcoming', 'vested', 'cancelled']).optional(),
+  notes: z.string().nullable().optional(),
+});
+
+/**
+ * PATCH /api/portfolio/rsu-grants/:grantId/vesting-events/:eventId
+ * Update tax rate, actuals, or status for one vesting event.
+ */
+portfolioRoutes.patch('/rsu-grants/:grantId/vesting-events/:eventId', async (c) => {
+  const eventId = c.req.param('eventId');
+  const raw: unknown = await c.req.json().catch(() => null);
+  const parsed = PatchVestingEventSchema.safeParse(raw);
+  if (!parsed.success) {
+    return c.json({ data: null, error: `Invalid request: ${parsed.error.message}` }, 400);
+  }
+  try {
+    const db = getDbClient();
+    const patch: VestingEventPatch = parsed.data;
+    await updateVestingEvent(db, eventId, patch);
+    const response: ApiResponse<{ updated: true }> = { data: { updated: true }, error: null };
+    return c.json(response, 200);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Database error';
+    return c.json({ data: null, error: message }, 500);
+  }
+});
+
+/**
+ * POST /api/portfolio/rsu-grants/:grantId/vesting-events/regenerate
+ * Re-derive vesting events from the stored grant formula.
+ * Preserves actuals on already-vested events.
+ */
+portfolioRoutes.post('/rsu-grants/:grantId/vesting-events/regenerate', async (c) => {
+  try {
+    const db = getDbClient();
+    const userId = c.get('userId');
+    const grantId = c.req.param('grantId');
+    const grants = await getRSUGrants(db, userId);
+    const grant = grants.find((g) => g.grantId === grantId);
+    if (!grant) {
+      return c.json({ data: null, error: `Grant ${grantId} not found` }, 404);
+    }
+    await generateAndInsertVestingEvents(db, userId, grant);
+    const events = await getVestingEvents(db, userId, grantId);
+    const response: ApiResponse<VestingEventRow[]> = { data: events, error: null };
     return c.json(response, 200);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Database error';
