@@ -35,18 +35,30 @@ export interface VestingFormulaParams {
 /**
  * Parse the vesting formula string into cliff and period parameters.
  *
- * Supported format: "3/48 at month 3, then 1/48 monthly"
+ * Supported formats:
+ *   "3/48 at month 3, then 1/48 monthly"  — cliff + monthly (standard Uber RSU)
+ *   "1/48 monthly"                         — pure monthly from month 1 (no cliff)
+ *   "1/48 per month"                       — same, alternate phrasing
  *
  * @throws if the formula string cannot be parsed
  */
 export function parseVestingFormula(formula: string): VestingFormulaParams {
-  const match = formula.match(/^(\d+)\/(\d+)\s+at\s+month\s+(\d+)/i);
-  if (!match) {
-    throw new Error(`Unrecognised vesting formula: "${formula}"`);
+  // Primary: "3/48 at month 3, then 1/48 monthly"
+  const cliffMatch = formula.match(/^(\d+)\/(\d+)\s+at\s+month\s+(\d+)/i);
+  if (cliffMatch) {
+    const denominator = parseInt(cliffMatch[2]!, 10);
+    const cliffMonthOffset = parseInt(cliffMatch[3]!, 10);
+    return { cliffMonthOffset, denominator };
   }
-  const denominator = parseInt(match[2]!, 10);
-  const cliffMonthOffset = parseInt(match[3]!, 10);
-  return { cliffMonthOffset, denominator };
+
+  // Fallback: "1/48 monthly" or "1/48 per month" — treat as cliff at month 1
+  const pureMonthlyMatch = formula.match(/^\d+\/(\d+)\s+(?:monthly|per\s+month)/i);
+  if (pureMonthlyMatch) {
+    const denominator = parseInt(pureMonthlyMatch[1]!, 10);
+    return { cliffMonthOffset: 1, denominator };
+  }
+
+  throw new Error(`Unrecognised vesting formula: "${formula}"`);
 }
 
 /**

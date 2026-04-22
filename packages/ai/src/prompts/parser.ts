@@ -251,16 +251,25 @@ export function normalizeToISO8601(dateStr: string): string {
 }
 
 /**
- * Normalize vestingFormula to standard format "3/48 at month 3, then 1/48 monthly"
- * if Claude extracts something similar but differently formatted.
+ * Normalize vestingFormula to standard format "3/48 at month 3, then 1/48 monthly".
+ * Handles alternate phrasings Claude may produce from PDF text.
  */
 function normalizeVestingFormula(formula: string): string {
-  // Already in the correct format
-  if (/^\d+\/\d+ at month \d+, then 1\/\d+ monthly$/i.test(formula.trim())) {
-    return formula.trim();
+  const f = formula.trim();
+
+  // Already in the canonical form
+  if (/^\d+\/\d+ at month \d+, then 1\/\d+ monthly$/i.test(f)) {
+    return f;
   }
-  // Return as-is if we can't normalize — parseVestingFormula in core will validate
-  return formula.trim();
+
+  // "1/48 monthly" or "1/48 per month" → "1/48 at month 1, then 1/48 monthly"
+  const pureMonthly = f.match(/^(\d+)\/(\d+)\s+(?:monthly|per\s+month)$/i);
+  if (pureMonthly) {
+    return `${pureMonthly[1]}/${pureMonthly[2]} at month 1, then 1/${pureMonthly[2]} monthly`;
+  }
+
+  // Return as-is — parseVestingFormula will attempt to handle it or throw
+  return f;
 }
 
 // ── JSON extraction helper ────────────────────────────────────────────────────

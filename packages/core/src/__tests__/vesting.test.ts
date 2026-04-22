@@ -37,6 +37,18 @@ describe('parseVestingFormula', () => {
     expect(result.denominator).toBe(48);
   });
 
+  it('parses pure monthly "1/48 monthly" with cliff at month 1', () => {
+    const result = parseVestingFormula('1/48 monthly');
+    expect(result.cliffMonthOffset).toBe(1);
+    expect(result.denominator).toBe(48);
+  });
+
+  it('parses "1/48 per month" as pure monthly', () => {
+    const result = parseVestingFormula('1/48 per month');
+    expect(result.cliffMonthOffset).toBe(1);
+    expect(result.denominator).toBe(48);
+  });
+
   it('throws on an unrecognised formula', () => {
     expect(() => parseVestingFormula('vest 25% per year')).toThrow();
   });
