@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import Anthropic from '@anthropic-ai/sdk';
 import { getAnthropicClient, SONNET_MODEL } from '../client.js';
 import type { PortfolioSnapshot, UberEquity, UberRSUGrant } from '@investpilot/core';
 
@@ -88,24 +87,10 @@ Cash balance: €${(input.cashBalanceEurCents / 100).toFixed(2)}
 
 ${input.previousBriefing ? `Previous month summary:\n${input.previousBriefing}` : ''}`;
 
-  const webSearchTool: Anthropic.Tool = {
-    name: 'web_search',
-    description: 'Search for current ETF prices, market indices, and financial news',
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        query: { type: 'string', description: 'Search query' },
-      },
-      required: ['query'],
-    },
-  };
-
   const message = await client.beta.promptCaching.messages.create({
     model: SONNET_MODEL,
     max_tokens: 3000,
     system: [{ type: 'text', text: BRIEFING_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
-    tools: [webSearchTool],
-    tool_choice: { type: 'auto' },
     messages: [{ role: 'user', content: userPrompt }],
   });
 

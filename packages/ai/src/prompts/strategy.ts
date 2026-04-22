@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import type Anthropic from '@anthropic-ai/sdk';
 import { getAnthropicClient, OPUS_MODEL } from '../client.js';
 import type {
   PortfolioSnapshot,
@@ -134,34 +133,19 @@ ${input.targets.filter((t) => t.active).map((t) => {
 - Deployable cash: €${(input.rebalancingPlan.availableCashEurCents / 100).toFixed(0)}
 ${input.rebalancingPlan.actions.filter((a) => a.action !== 'hold').slice(0, 3).map((a) => `- ${a.action.toUpperCase()} ${a.etfName}: €${Math.abs(a.amountEurCents) / 100}`).join('\n')}
 
-Please search for current market context (MSCI World, S&P 500, FTSE All-World performance this quarter, Uber stock recent performance) and factor it into your recommendation.`;
+Use your knowledge of recent market conditions to provide context on broad market performance this quarter. Be specific where you can; note where data may be approximate.`;
 }
 
 export async function generateStrategyAdvice(input: StrategyAdviceInput): Promise<StrategyAdvice> {
   const client = getAnthropicClient();
 
-  const webSearchTool: Anthropic.Tool = {
-    name: 'web_search',
-    description: 'Search for current financial market data, stock prices, and investment news',
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        query: { type: 'string', description: 'Search query' },
-      },
-      required: ['query'],
-    },
-  };
-
   const message = await client.beta.promptCaching.messages.create({
     model: OPUS_MODEL,
     max_tokens: 4096,
     system: [{ type: 'text', text: STRATEGY_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
-    tools: [webSearchTool],
-    tool_choice: { type: 'auto' },
     messages: [{ role: 'user', content: buildStrategyUserPrompt(input) }],
   });
 
-  // Extract text from final response (after any tool use)
   const textContent = message.content.find((b) => b.type === 'text');
   if (!textContent || textContent.type !== 'text') {
     throw new Error('No text response from strategy advisor');

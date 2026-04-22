@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import type Anthropic from '@anthropic-ai/sdk';
 import { getAnthropicClient, SONNET_MODEL } from '../client.js';
 import type {
   UberEquity,
@@ -95,36 +94,16 @@ ${input.nearYearEnd ? '- ⚠️ Within 6 weeks of Dec 31 — Box 3 tax considera
 ## Active Grants (for context)
 ${input.rsuGrants.filter((g) => g.status === 'active').map((g) => `- Grant ${g.grantId}: ${g.totalRsus} RSUs from ${g.vestingCommencementDate}`).join('\n')}
 
-Please search for:
-1. Current Uber stock price and recent 30-day performance
-2. Analyst price targets and recent sentiment
-3. Any upcoming Uber earnings or major events
-4. Current USD/EUR rate trend
-
-Then provide your sell recommendation.`;
+Use your knowledge of Uber's recent stock performance, analyst consensus, and USD/EUR trends to inform your recommendation. Note where data may be approximate.`;
 }
 
 export async function generateUberSellAdvice(input: UberSellAdviceInput): Promise<UberSellAdvice> {
   const client = getAnthropicClient();
 
-  const webSearchTool: Anthropic.Tool = {
-    name: 'web_search',
-    description: 'Search for Uber stock price, analyst ratings, and USD/EUR exchange rate',
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        query: { type: 'string', description: 'Search query' },
-      },
-      required: ['query'],
-    },
-  };
-
   const message = await client.beta.promptCaching.messages.create({
     model: SONNET_MODEL,
     max_tokens: 2048,
     system: [{ type: 'text', text: UBER_ADVISOR_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
-    tools: [webSearchTool],
-    tool_choice: { type: 'auto' },
     messages: [{ role: 'user', content: buildUberUserPrompt(input) }],
   });
 
