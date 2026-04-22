@@ -119,10 +119,10 @@ export async function generateUberSellAdvice(input: UberSellAdviceInput): Promis
     },
   };
 
-  const message = await client.messages.create({
+  const message = await client.beta.promptCaching.messages.create({
     model: SONNET_MODEL,
     max_tokens: 2048,
-    system: UBER_ADVISOR_SYSTEM_PROMPT,
+    system: [{ type: 'text', text: UBER_ADVISOR_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
     tools: [webSearchTool],
     tool_choice: { type: 'auto' },
     messages: [{ role: 'user', content: buildUberUserPrompt(input) }],

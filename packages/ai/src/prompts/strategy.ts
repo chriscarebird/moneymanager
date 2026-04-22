@@ -117,10 +117,7 @@ ${input.snapshot.holdings.map((h) => `- ${h.name} (${h.isin}): ${h.quantity} sha
 ${input.uberEquity.map((e) => `- ${e.type}: ${e.sharesHeld} held (${e.sharesAvailableToTransact} available) = $${(e.marketValueUsdCents / 100).toFixed(0)}`).join('\n')}
 ${input.uberPriceUsdCents ? `- Current Uber price: $${(input.uberPriceUsdCents / 100).toFixed(2)}` : ''}
 
-## Active RSU Grants
-${input.rsuGrants.filter((g) => g.status === 'active').map((g) => `- Grant ${g.grantId}: ${g.totalRsus} total RSUs, vesting from ${g.vestingCommencementDate}, formula: ${g.vestingFormula}`).join('\n')}
-
-## Next Vesting Events
+## Next Vesting Events (upcoming 5)
 ${input.vestingSchedule.events.slice(0, 5).map((e) => `- ${e.date}: ${e.sharesVesting} shares`).join('\n')}
 
 ## Target Allocations vs Actual
@@ -135,7 +132,7 @@ ${input.targets.filter((t) => t.active).map((t) => {
 - Rebalancing recommended: ${input.rebalancingPlan.rebalancingRecommended}
 - Max drift: ${input.rebalancingPlan.maxDriftPct.toFixed(1)}%
 - Deployable cash: €${(input.rebalancingPlan.availableCashEurCents / 100).toFixed(0)}
-${input.rebalancingPlan.actions.filter((a) => a.action !== 'hold').map((a) => `- ${a.action.toUpperCase()} ${a.etfName}: €${Math.abs(a.amountEurCents) / 100}`).join('\n')}
+${input.rebalancingPlan.actions.filter((a) => a.action !== 'hold').slice(0, 3).map((a) => `- ${a.action.toUpperCase()} ${a.etfName}: €${Math.abs(a.amountEurCents) / 100}`).join('\n')}
 
 Please search for current market context (MSCI World, S&P 500, FTSE All-World performance this quarter, Uber stock recent performance) and factor it into your recommendation.`;
 }
@@ -155,10 +152,10 @@ export async function generateStrategyAdvice(input: StrategyAdviceInput): Promis
     },
   };
 
-  const message = await client.messages.create({
+  const message = await client.beta.promptCaching.messages.create({
     model: OPUS_MODEL,
     max_tokens: 4096,
-    system: STRATEGY_SYSTEM_PROMPT,
+    system: [{ type: 'text', text: STRATEGY_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
     tools: [webSearchTool],
     tool_choice: { type: 'auto' },
     messages: [{ role: 'user', content: buildStrategyUserPrompt(input) }],

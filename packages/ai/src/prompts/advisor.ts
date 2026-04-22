@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { getAnthropicClient, SONNET_MODEL } from '../client.js';
 import type { RebalancingPlan, VestingSchedule, ConcentrationAnalysis } from '@investpilot/core';
 
+
 /**
  * Types of advisory context for Claude.
  */
@@ -150,10 +151,10 @@ Cash available: €${(input.cashBalanceEurCents / 100).toFixed(2)}
 
 Provide prioritised actions. Use free trades first. Only sell if truly needed. Keep costs minimal.`;
 
-  const message = await client.messages.create({
+  const message = await client.beta.promptCaching.messages.create({
     model: SONNET_MODEL,
     max_tokens: 2048,
-    system: REBALANCE_SYSTEM_PROMPT,
+    system: [{ type: 'text' as const, text: REBALANCE_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: userPrompt }],
   });
 
@@ -185,10 +186,10 @@ Current Uber price: $${(input.currentUsdPriceCents / 100).toFixed(2)}
 
 Consider: concentration risk (>20% is over limit), holding period flags, vesting timing.`;
 
-  const message = await client.messages.create({
+  const message = await client.beta.promptCaching.messages.create({
     model: SONNET_MODEL,
     max_tokens: 2048,
-    system: REBALANCE_SYSTEM_PROMPT,
+    system: [{ type: 'text' as const, text: REBALANCE_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: userPrompt }],
   });
 
@@ -226,10 +227,10 @@ ${input.plan.actions
 
 Generate concrete buy orders. All ETF purchases are free (first trade of month per ISIN on DeGiro). Note this explicitly.`;
 
-  const message = await client.messages.create({
+  const message = await client.beta.promptCaching.messages.create({
     model: SONNET_MODEL,
     max_tokens: 2048,
-    system: DCA_SYSTEM_PROMPT,
+    system: [{ type: 'text', text: DCA_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: userPrompt }],
   });
 
@@ -257,10 +258,10 @@ export async function* streamAdvisoryChat(
 ## Current Advisory Context
 ${contextSummary}`;
 
-  const stream = await client.messages.stream({
+  const stream = await client.beta.promptCaching.messages.stream({
     model: SONNET_MODEL,
     max_tokens: 1024,
-    system: systemWithContext,
+    system: [{ type: 'text', text: systemWithContext, cache_control: { type: 'ephemeral' } }],
     messages: messages.map((m) => ({
       role: m.role,
       content: m.content,

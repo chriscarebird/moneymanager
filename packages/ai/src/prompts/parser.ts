@@ -294,10 +294,10 @@ export async function parseDeGiroScreenshot(
 ): Promise<ParsedPortfolio> {
   const client = getAnthropicClient();
 
-  const message = await client.messages.create({
+  const message = await client.beta.promptCaching.messages.create({
     model: SONNET_MODEL,
     max_tokens: 4096,
-    system: DEGIRO_PARSER_SYSTEM_PROMPT,
+    system: [{ type: 'text', text: DEGIRO_PARSER_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
     messages: [
       {
         role: 'user',
@@ -346,10 +346,10 @@ export async function parseMorganStanleyScreenshot(
 ): Promise<ParsedMSHoldings> {
   const client = getAnthropicClient();
 
-  const message = await client.messages.create({
+  const message = await client.beta.promptCaching.messages.create({
     model: SONNET_MODEL,
     max_tokens: 2048,
-    system: MS_HOLDINGS_SYSTEM_PROMPT,
+    system: [{ type: 'text', text: MS_HOLDINGS_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
     messages: [
       {
         role: 'user',
@@ -432,10 +432,10 @@ export async function parseRSUGrantDocument(
         data: documentBase64,
       },
     };
-    const message = await client.messages.create({
+    const message = await client.beta.promptCaching.messages.create({
       model: SONNET_MODEL,
       max_tokens: 2048,
-      system: RSU_GRANT_SYSTEM_PROMPT,
+      system: [{ type: 'text', text: RSU_GRANT_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
       messages: [{ role: 'user', content: [imageBlock, userInstruction] }],
     });
     const textBlock = message.content.find((b) => b.type === 'text');

@@ -76,13 +76,13 @@ export async function generateMonthlyBriefing(input: BriefingInput): Promise<Bri
   const userPrompt = `Generate a monthly briefing for ${input.month}.
 
 Portfolio snapshot (${input.snapshot.date}):
-${JSON.stringify(input.snapshot.holdings, null, 2)}
+${input.snapshot.holdings.map((h) => `- ${h.name} (${h.isin}): ${h.quantity} shares = €${(h.valueCents / 100).toFixed(0)}`).join('\n')}
 
 Uber equity:
-${JSON.stringify(input.uberEquity, null, 2)}
+${input.uberEquity.map((e) => `- ${e.type}: ${e.sharesHeld} held, ${e.sharesAvailableToTransact} available = $${(e.marketValueUsdCents / 100).toFixed(0)}`).join('\n')}
 
 Active RSU grants:
-${JSON.stringify(input.rsuGrants, null, 2)}
+${input.rsuGrants.filter((g) => g.status === 'active').map((g) => `- Grant ${g.grantId}: ${g.totalRsus} RSUs from ${g.vestingCommencementDate}`).join('\n')}
 
 Cash balance: €${(input.cashBalanceEurCents / 100).toFixed(2)}
 
@@ -100,10 +100,10 @@ ${input.previousBriefing ? `Previous month summary:\n${input.previousBriefing}` 
     },
   };
 
-  const message = await client.messages.create({
+  const message = await client.beta.promptCaching.messages.create({
     model: SONNET_MODEL,
     max_tokens: 3000,
-    system: BRIEFING_SYSTEM_PROMPT,
+    system: [{ type: 'text', text: BRIEFING_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
     tools: [webSearchTool],
     tool_choice: { type: 'auto' },
     messages: [{ role: 'user', content: userPrompt }],
