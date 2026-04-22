@@ -15,7 +15,7 @@ type Props = {
 
 function formatLabel(dateStr: string): string {
   const d = new Date(dateStr);
-  return d.toLocaleDateString('en-US', { month: 'short', year: '2-digit', timeZone: 'UTC' });
+  return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 }
 
 export function PortfolioHistoryChart({ history }: Props) {
