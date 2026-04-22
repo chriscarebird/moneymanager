@@ -15,7 +15,7 @@ const CHARGED_FEE_CENTS = 200; // €2.00 per paid trade
 type Trade = {
   isin: string;
   name: string;
-  action: 'buy' | 'sell';
+  action: 'buy';
   amountCents: number;
   driftPct: number;
   executed: boolean;
@@ -23,60 +23,64 @@ type Trade = {
   estimatedFeeCents: number;
 };
 
-const MIN_ORDER_CENTS = 20_000; // €200
+const MIN_ORDER_CENTS = 20_000; // €200 — fee overhead threshold
 
+/**
+ * Buy-only rebalancing: never force a sell.
+ * Deploys available cash into the most underweight positions proportionally,
+ * capped at each position's full shortfall.  Skips orders below €200 to avoid
+ * paying the €2 DeGiro fee on a trivially small trade.
+ *
+ * The denominator for all % calculations is (current ETF value + cash) so
+ * drift figures reflect where the portfolio lands once cash is deployed.
+ */
 function computeTrades(
   snapshot: PortfolioSnapshot,
   targets: TargetAllocation[],
   cashCents: number,
 ): Trade[] {
-  const total = totalEtfEurCents(snapshot);
-  const activeTargets = targets.filter((t) => t.active);
-  const trades: Trade[] = [];
+  // Use investable total (ETF + cash) so drift reflects post-deployment state
+  const investable = totalEtfEurCents(snapshot) + cashCents;
+  if (investable === 0 || cashCents <= 0) return [];
 
-  for (const target of activeTargets) {
+  const activeTargets = targets.filter((t) => t.active);
+
+  // Find underweight positions and their shortfall vs target
+  const underweight = activeTargets.flatMap((target) => {
     const holding = snapshot.holdings.find((h) => h.isin === target.etfIsin);
     const actualCents = holding?.valueCents ?? 0;
-    const actualPct = total > 0 ? (actualCents / total) * 100 : 0;
-    const driftPct = actualPct - target.targetPct;
-    const targetCents = (target.targetPct / 100) * total;
-    const diff = targetCents - actualCents;
+    const targetCents = Math.round((target.targetPct / 100) * investable);
+    const shortfall = targetCents - actualCents;
+    const driftPct = (actualCents / investable) * 100 - target.targetPct;
+    return shortfall > 0 ? [{ target, shortfall, driftPct }] : [];
+  });
 
-    if (Math.abs(diff) < MIN_ORDER_CENTS) continue;
+  if (underweight.length === 0) return [];
 
-    // DeGiro fair-use rule: first trade per free ETF per month is free
-    const estimatedFeeCents = target.isFreeEtf ? 0 : CHARGED_FEE_CENTS;
+  // Proportionally split cash across shortfalls, capped per position
+  const totalShortfall = underweight.reduce((s, u) => s + u.shortfall, 0);
+  const trades: Trade[] = [];
+
+  for (const { target, shortfall, driftPct } of underweight) {
+    const proportion = shortfall / totalShortfall;
+    const buyAmount = Math.min(Math.round(cashCents * proportion), shortfall);
+    if (buyAmount < MIN_ORDER_CENTS) continue;
 
     trades.push({
       isin: target.etfIsin,
       name: target.etfName,
-      action: diff > 0 ? 'buy' : 'sell',
-      amountCents: Math.abs(Math.round(diff)),
+      action: 'buy',
+      amountCents: buyAmount,
       driftPct,
       executed: false,
       isFreeEtf: target.isFreeEtf,
-      estimatedFeeCents,
+      estimatedFeeCents: target.isFreeEtf ? 0 : CHARGED_FEE_CENTS,
     });
   }
 
-  // Sort: sell first (frees cash), then buy
-  trades.sort((a, b) => (a.action === 'sell' ? -1 : 1) - (b.action === 'sell' ? -1 : 1));
-
-  // Cap buys to available cash (including sell proceeds estimate)
-  const sellProceeds = trades
-    .filter((t) => t.action === 'sell')
-    .reduce((s, t) => s + t.amountCents, 0);
-  let availableCash = cashCents + sellProceeds;
-  return trades
-    .map((t) => {
-      if (t.action === 'buy') {
-        const amount = Math.min(t.amountCents, availableCash);
-        availableCash -= amount;
-        return { ...t, amountCents: amount };
-      }
-      return t;
-    })
-    .filter((t) => t.amountCents >= MIN_ORDER_CENTS);
+  // Most underweight position first
+  trades.sort((a, b) => a.driftPct - b.driftPct);
+  return trades;
 }
 
 export function RebalanceScreen({ snapshot, targets, cashCents, loading }: Props) {
@@ -163,8 +167,8 @@ export function RebalanceScreen({ snapshot, targets, cashCents, loading }: Props
               .filter((t) => t.active)
               .map((t) => {
                 const holding = snapshot.holdings.find((h) => h.isin === t.etfIsin);
-                const total = totalEtfEurCents(snapshot);
-                const actual = holding ? (holding.valueCents / total) * 100 : 0;
+                const investable = totalEtfEurCents(snapshot) + cashCents;
+                const actual = holding && investable > 0 ? (holding.valueCents / investable) * 100 : 0;
                 const drift = actual - t.targetPct;
                 return (
                   <div key={t.id} className="flex items-center gap-2 text-xs">
@@ -226,9 +230,11 @@ export function RebalanceScreen({ snapshot, targets, cashCents, loading }: Props
       {/* Trade list */}
       {computed && trades.length === 0 && (
         <div className="bg-slate-800 rounded-2xl p-5 text-center">
-          <p className="text-green-400 text-sm font-medium">Portfolio is balanced</p>
+          <p className="text-green-400 text-sm font-medium">Nothing to buy this month</p>
           <p className="text-slate-500 text-xs mt-1">
-            All positions within €{MIN_ORDER_CENTS / 100} of target
+            {cashCents < MIN_ORDER_CENTS
+              ? `Add at least €${MIN_ORDER_CENTS / 100} cash to start investing`
+              : 'All underweight positions are within the minimum order size'}
           </p>
         </div>
       )}
@@ -247,14 +253,8 @@ export function RebalanceScreen({ snapshot, targets, cashCents, loading }: Props
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span
-                        className={`text-xs font-bold px-1.5 py-0.5 rounded ${
-                          t.action === 'buy'
-                            ? 'bg-blue-900 text-blue-300'
-                            : 'bg-red-900 text-red-300'
-                        }`}
-                      >
-                        {t.action.toUpperCase()}
+                      <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-blue-900 text-blue-300">
+                        BUY
                       </span>
                       <span
                         className={`text-xs font-semibold px-1.5 py-0.5 rounded ${
