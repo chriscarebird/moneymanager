@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { getAnthropicClient, SONNET_MODEL } from '../client.js';
+import { extractJSON } from '../json.js';
 import type {
   UberEquity,
   UberRSUGrant,
@@ -112,6 +113,6 @@ export async function generateUberSellAdvice(input: UberSellAdviceInput): Promis
     throw new Error('No text response from Uber advisor');
   }
 
-  const parsed: unknown = JSON.parse(textContent.text);
+  const parsed: unknown = JSON.parse(extractJSON(textContent.text));
   return UberSellAdviceSchema.parse(parsed);
 }

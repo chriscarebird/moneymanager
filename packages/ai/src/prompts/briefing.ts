@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { getAnthropicClient, SONNET_MODEL } from '../client.js';
+import { extractJSON } from '../json.js';
 import type { PortfolioSnapshot, UberEquity, UberRSUGrant } from '@investpilot/core';
 
 /**
@@ -99,6 +100,6 @@ ${input.previousBriefing ? `Previous month summary:\n${input.previousBriefing}` 
     throw new Error('No text response from Claude briefing generator');
   }
 
-  const parsed: unknown = JSON.parse(textContent.text);
+  const parsed: unknown = JSON.parse(extractJSON(textContent.text));
   return BriefingResponseSchema.parse(parsed);
 }

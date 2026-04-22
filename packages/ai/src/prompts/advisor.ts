@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { getAnthropicClient, SONNET_MODEL } from '../client.js';
+import { extractJSON } from '../json.js';
 import type { RebalancingPlan, VestingSchedule, ConcentrationAnalysis } from '@investpilot/core';
 
 
@@ -163,7 +164,7 @@ Provide prioritised actions. Use free trades first. Only sell if truly needed. K
     throw new Error('No text response from rebalancing advisor');
   }
 
-  const parsed: unknown = JSON.parse(textContent.text);
+  const parsed: unknown = JSON.parse(extractJSON(textContent.text));
   return AdviceResponseSchema.parse(parsed);
 }
 
@@ -198,7 +199,7 @@ Consider: concentration risk (>20% is over limit), holding period flags, vesting
     throw new Error('No text response from RSU advisor');
   }
 
-  const parsed: unknown = JSON.parse(textContent.text);
+  const parsed: unknown = JSON.parse(extractJSON(textContent.text));
   return AdviceResponseSchema.parse(parsed);
 }
 
@@ -239,7 +240,7 @@ Generate concrete buy orders. All ETF purchases are free (first trade of month p
     throw new Error('No text response from DCA advisor');
   }
 
-  const parsed: unknown = JSON.parse(textContent.text);
+  const parsed: unknown = JSON.parse(extractJSON(textContent.text));
   return AdviceResponseSchema.parse(parsed);
 }
 

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import Anthropic from '@anthropic-ai/sdk';
 import { getAnthropicClient, SONNET_MODEL } from '../client.js';
+import { extractJSON } from '../json.js';
 
 /**
  * Zod schema for a parsed holding from a portfolio screenshot.
@@ -270,15 +271,6 @@ function normalizeVestingFormula(formula: string): string {
 
   // Return as-is — parseVestingFormula will attempt to handle it or throw
   return f;
-}
-
-// ── JSON extraction helper ────────────────────────────────────────────────────
-
-/** Strip markdown code fences if Claude wraps its JSON response in them. */
-function extractJSON(text: string): string {
-  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenced?.[1]) return fenced[1].trim();
-  return text.trim();
 }
 
 // ── Parser functions ──────────────────────────────────────────────────────────

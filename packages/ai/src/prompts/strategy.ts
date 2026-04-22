@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { getAnthropicClient, OPUS_MODEL } from '../client.js';
+import { extractJSON } from '../json.js';
 import type {
   PortfolioSnapshot,
   UberEquity,
@@ -151,6 +152,6 @@ export async function generateStrategyAdvice(input: StrategyAdviceInput): Promis
     throw new Error('No text response from strategy advisor');
   }
 
-  const parsed: unknown = JSON.parse(textContent.text);
+  const parsed: unknown = JSON.parse(extractJSON(textContent.text));
   return StrategyAdviceSchema.parse(parsed);
 }
