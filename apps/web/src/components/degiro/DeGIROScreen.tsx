@@ -63,6 +63,7 @@ function computePnL(snapshot: PortfolioSnapshot, transactions: TransactionHistor
 export function DeGIROScreen({
   snapshot, targets, cashCents, loading, transactions, snapshotHistory, onSaved,
 }: Props) {
+  const totalEtfCents = snapshot?.holdings.reduce((s, h) => s + h.valueCents, 0) ?? 0;
   const pnl = snapshot ? computePnL(snapshot, transactions) : [];
   const totalGainCents = pnl.reduce((s, p) => s + p.gainCents, 0);
   const totalCurrentCents = pnl.reduce((s, p) => s + p.currentValueCents, 0);
@@ -73,6 +74,18 @@ export function DeGIROScreen({
 
   return (
     <div className="space-y-4 pb-6">
+      {/* Total card */}
+      <div className="bg-slate-800 rounded-2xl p-5">
+        <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">
+          DeGIRO Portfolio
+        </p>
+        <p className="text-2xl font-bold text-white">{formatEur(totalEtfCents)}</p>
+        <p className="text-slate-500 text-sm">
+          {snapshot
+            ? `${snapshot.holdings.length} position${snapshot.holdings.length !== 1 ? 's' : ''} · as of ${snapshot.date.slice(0, 10)}`
+            : 'No snapshot yet — upload a DeGiro screenshot'}
+        </p>
+      </div>
       <AllocationBarChart snapshot={snapshot} targets={targets} />
 
       <PortfolioHistoryChart history={snapshotHistory} />
