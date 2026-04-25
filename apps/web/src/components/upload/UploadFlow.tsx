@@ -8,17 +8,17 @@ type UploadTab = 'degiro' | 'ms-holdings' | 'rsu-grant';
 const TABS: { id: UploadTab; label: string; description: string }[] = [
   {
     id: 'degiro',
-    label: 'DeGiro Portfolio',
+    label: 'DeGIRO',
     description: 'Upload a screenshot of your DeGiro portfolio overview',
   },
   {
     id: 'ms-holdings',
-    label: 'Morgan Stanley',
+    label: 'Uber Position (Morgan Stanley)',
     description: 'Upload a screenshot of your Morgan Stanley holdings',
   },
   {
     id: 'rsu-grant',
-    label: 'RSU Grant',
+    label: 'Uber RSU Vesting',
     description: 'Upload your RSU grant document (PDF or image)',
   },
 ];

@@ -1,19 +1,10 @@
 import { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
-import { LayoutDashboard, Upload, RefreshCw, TrendingUp, Settings, Bot, BarChart2 } from 'lucide-react';
+import { LayoutDashboard, Upload, TrendingUp, Car, Settings } from 'lucide-react';
 import { UploadFlow } from './components/upload/UploadFlow.js';
-import { PortfolioValueCard } from './components/dashboard/PortfolioValueCard.js';
-import { PortfolioHistoryChart } from './components/dashboard/PortfolioHistoryChart.js';
-import { Box3Widget } from './components/dashboard/Box3Widget.js';
-import { AllocationDonut } from './components/dashboard/AllocationDonut.js';
-import { ConcentrationGauge } from './components/dashboard/ConcentrationGauge.js';
-import { VestingProjectionChart } from './components/dashboard/VestingProjectionChart.js';
-import { UpcomingEvents } from './components/dashboard/UpcomingEvents.js';
-import { EquityScreen } from './components/equity/EquityScreen.js';
-import { RebalanceScreen } from './components/rebalance/RebalanceScreen.js';
+import { OverviewScreen } from './components/overview/OverviewScreen.js';
+import { DeGIROScreen } from './components/degiro/DeGIROScreen.js';
+import { UberScreen } from './components/uber/UberScreen.js';
 import { SettingsScreen } from './components/settings/SettingsScreen.js';
-import { AdvisorScreen } from './components/advisor/AdvisorScreen.js';
-import { TradingWindowFlow } from './components/advisor/TradingWindowFlow.js';
-import { PerformanceScreen } from './components/analytics/PerformanceScreen.js';
 import { OnboardingWizard } from './components/onboarding/OnboardingWizard.js';
 import {
   useLatestSnapshot,
@@ -28,7 +19,6 @@ import {
   useMSSnapshotHistory,
 } from './hooks/useData.js';
 import { api } from './lib/api.js';
-import { totalEtfEurCents, totalUberEurCents } from './lib/calc.js';
 import { registerSW } from './sw.js';
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -107,20 +97,18 @@ function LoginScreen({ onLogin }: { onLogin: (username: string) => void }) {
 
 // ── Main app shell ────────────────────────────────────────────────────────────
 
-type Tab = 'dashboard' | 'upload' | 'rebalance' | 'equity' | 'advisor' | 'analytics' | 'settings';
+type Tab = 'overview' | 'upload' | 'degiro' | 'uber' | 'settings';
 
 const TABS: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
-  { id: 'dashboard', label: 'Home', icon: LayoutDashboard },
-  { id: 'upload', label: 'Upload', icon: Upload },
-  { id: 'rebalance', label: 'Rebalance', icon: RefreshCw },
-  { id: 'equity', label: 'Equity', icon: TrendingUp },
-  { id: 'advisor', label: 'Advisor', icon: Bot },
-  { id: 'analytics', label: 'Analytics', icon: BarChart2 },
+  { id: 'overview', label: 'Overview',  icon: LayoutDashboard },
+  { id: 'upload',   label: 'Upload',    icon: Upload },
+  { id: 'degiro',   label: 'DeGIRO',   icon: TrendingUp },
+  { id: 'uber',     label: 'Uber',      icon: Car },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
 function AppShell({ userId, onLogout }: { userId: string; onLogout: () => void }) {
-  const [tab, setTab] = useState<Tab>('dashboard');
+  const [tab, setTab] = useState<Tab>('overview');
   const [onboardingDone, setOnboardingDone] = useState(
     () => Boolean(localStorage.getItem(`investpilot_onboarded_${userId}`)),
   );
@@ -150,21 +138,14 @@ function AppShell({ userId, onLogout }: { userId: string; onLogout: () => void }
   }
 
   const cashCents = cash.data?.amountCents ?? 0;
-  // Use live FX rate if available, fall back to default
   const fxRate = livePrices.data?.fxRateUsdEur ?? 0.92;
 
-  // Onboarding detection: show wizard when no snapshot and no targets
   const isLoaded = !snapshot.loading && !targets.loading;
   const isNewUser =
     isLoaded &&
     !snapshot.data &&
     (targets.data ?? []).length === 0 &&
     !onboardingDone;
-
-  // Total portfolio value for Box 3 widget (ETF cents + equity converted to EUR)
-  const totalPortfolioEurCents =
-    (snapshot.data ? totalEtfEurCents(snapshot.data) : 0) +
-    totalUberEurCents(equity.data ?? [], fxRate);
 
   return (
     <div className="min-h-screen bg-slate-900 text-white flex flex-col">
@@ -173,9 +154,7 @@ function AppShell({ userId, onLogout }: { userId: string; onLogout: () => void }
         <h1 className="text-lg font-bold text-white">InvestPilot</h1>
         <div className="flex items-center gap-3">
           {livePrices.data && (
-            <span className="text-xs text-slate-500">
-              FX {fxRate.toFixed(4)}
-            </span>
+            <span className="text-xs text-slate-500">FX {fxRate.toFixed(4)}</span>
           )}
           <button
             onClick={onLogout}
@@ -196,30 +175,17 @@ function AppShell({ userId, onLogout }: { userId: string; onLogout: () => void }
 
       {/* Content — scrollable */}
       <main className="flex-1 overflow-y-auto px-4 pt-4 pb-24">
-        {/* ── Dashboard ─────────────────────────────────────────────── */}
-        {tab === 'dashboard' && (
-          <div className="space-y-4 max-w-lg mx-auto">
-            <PortfolioValueCard
+        {/* ── Overview ──────────────────────────────────────────────── */}
+        {tab === 'overview' && (
+          <div className="max-w-lg mx-auto">
+            <OverviewScreen
               snapshot={snapshot.data ?? null}
               equity={equity.data ?? []}
               livePrices={livePrices.data ?? null}
               fxRate={fxRate}
-            />
-            <PortfolioHistoryChart history={snapshotHistory.data ?? []} />
-            <Box3Widget totalPortfolioEurCents={totalPortfolioEurCents} />
-            <AllocationDonut snapshot={snapshot.data ?? null} targets={targets.data ?? []} />
-            <ConcentrationGauge
-              snapshot={snapshot.data ?? null}
-              equity={equity.data ?? []}
-              fxRate={fxRate}
-            />
-            <VestingProjectionChart
-              snapshot={snapshot.data ?? null}
-              equity={equity.data ?? []}
               grants={grants.data ?? []}
-              fxRate={fxRate}
+              cashCents={cashCents}
             />
-            <UpcomingEvents grants={grants.data ?? []} cashCents={cashCents} />
           </div>
         )}
 
@@ -230,51 +196,32 @@ function AppShell({ userId, onLogout }: { userId: string; onLogout: () => void }
           </div>
         )}
 
-        {/* ── Rebalance ─────────────────────────────────────────────── */}
-        {tab === 'rebalance' && (
+        {/* ── DeGIRO ────────────────────────────────────────────────── */}
+        {tab === 'degiro' && (
           <div className="max-w-lg mx-auto">
-            <RebalanceScreen
+            <DeGIROScreen
               snapshot={snapshot.data ?? null}
               targets={targets.data ?? []}
               cashCents={cashCents}
               loading={snapshot.loading || targets.loading}
+              transactions={transactions.data ?? []}
+              snapshotHistory={snapshotHistory.data ?? []}
+              onSaved={refetchAll}
             />
           </div>
         )}
 
-        {/* ── Equity ────────────────────────────────────────────────── */}
-        {tab === 'equity' && (
+        {/* ── Uber ──────────────────────────────────────────────────── */}
+        {tab === 'uber' && (
           <div className="max-w-lg mx-auto">
-            <EquityScreen
+            <UberScreen
               equity={equity.data ?? []}
               grants={grants.data ?? []}
               msHistory={msHistory.data ?? []}
               loading={equity.loading || grants.loading}
               onVestingUpdated={grants.refetch}
-            />
-          </div>
-        )}
-
-        {/* ── Advisor ───────────────────────────────────────────────── */}
-        {tab === 'advisor' && (
-          <div className="max-w-lg mx-auto space-y-4">
-            {/* Trading window workflow sits above the advisor chat */}
-            <TradingWindowFlow
-              window={tradingWindow.data ?? null}
+              tradingWindow={tradingWindow.data ?? null}
               onWindowSaved={() => { tradingWindow.refetch(); refetchAll(); }}
-            />
-            <AdvisorScreen />
-          </div>
-        )}
-
-        {/* ── Analytics ─────────────────────────────────────────────── */}
-        {tab === 'analytics' && (
-          <div className="max-w-lg mx-auto">
-            <PerformanceScreen
-              snapshot={snapshot.data ?? null}
-              transactions={transactions.data ?? []}
-              snapshotHistory={snapshotHistory.data ?? []}
-              loading={snapshot.loading || transactions.loading}
             />
           </div>
         )}
@@ -283,7 +230,6 @@ function AppShell({ userId, onLogout }: { userId: string; onLogout: () => void }
         {tab === 'settings' && (
           <div className="max-w-lg mx-auto">
             <SettingsScreen
-              targets={targets.data ?? []}
               cash={cash.data ?? null}
               onSaved={refetchAll}
             />
@@ -325,7 +271,6 @@ export function App() {
     }
   }
 
-  // Register service worker and check session on mount
   useEffect(() => {
     registerSW();
     void checkAuth();

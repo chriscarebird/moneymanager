@@ -10,7 +10,7 @@ import {
   Cell,
 } from 'recharts';
 import type { UberEquity, UberRSUGrant } from '../../lib/api.js';
-import type { MSSnapshotHistoryPoint, VestingEventRow } from '../../lib/api.js';
+import type { MSSnapshotHistoryPoint } from '../../lib/api.js';
 import { formatUsd, DEFAULT_FX_RATE } from '../../lib/calc.js';
 import { VestingEventTable } from './VestingEventTable.js';
 import { useVestingEvents } from '../../hooks/useData.js';
@@ -187,7 +187,7 @@ function MSHistoryChart({ history }: { history: MSSnapshotHistoryPoint[] }) {
                 color: '#f1f5f9',
                 fontSize: 11,
               }}
-              formatter={(v: number) => [`$${v}k`, 'Total']}
+              formatter={(v: unknown) => [`$${v as number}k`, 'Total']}
             />
             <Line
               type="monotone"

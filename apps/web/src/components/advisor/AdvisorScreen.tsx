@@ -151,8 +151,10 @@ function AdviceDisplay({
   );
 }
 
-export function AdvisorScreen() {
-  const [mode, setMode] = useState<Mode>('rebalance');
+type Props = { restrictToMode?: Mode };
+
+export function AdvisorScreen({ restrictToMode }: Props = {}) {
+  const [mode, setMode] = useState<Mode>(restrictToMode ?? 'rebalance');
   const [investAmount, setInvestAmount] = useState(1000);
   const [advice, setAdvice] = useState<AdviceResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -234,26 +236,30 @@ export function AdvisorScreen() {
 
   return (
     <div className="space-y-4 pb-6">
-      {/* Mode picker */}
+      {/* Mode picker — hidden when a specific mode is forced */}
       <div className="bg-slate-800 rounded-2xl p-4">
-        <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-3">
-          Advisory Mode
-        </p>
-        <div className="flex flex-wrap gap-2 mb-3">
-          {modes.map((m) => (
-            <button
-              key={m.id}
-              onClick={() => { setMode(m.id); setAdvice(null); setError(''); setChatMessages([]); }}
-              className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
-                mode === m.id
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-              }`}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
+        {!restrictToMode && (
+          <>
+            <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-3">
+              Advisory Mode
+            </p>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {modes.map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => { setMode(m.id); setAdvice(null); setError(''); setChatMessages([]); }}
+                  className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
+                    mode === m.id
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         <p className="text-slate-500 text-xs mb-3">{currentMode.description}</p>
 
