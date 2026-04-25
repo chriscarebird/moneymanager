@@ -39,7 +39,10 @@ export const StrategyAdviceSchema = z.object({
   priorityActions: z.array(
     z.object({
       priority: z.enum(['high', 'medium', 'low']),
-      category: z.enum(['rebalance', 'rsu', 'dca', 'risk', 'tax', 'other']),
+      category: z.preprocess(
+        (v) => (v === 'rebalancing' ? 'rebalance' : v),
+        z.enum(['rebalance', 'rsu', 'dca', 'risk', 'tax', 'other']),
+      ),
       action: z.string(),
       rationale: z.string(),
       amountCents: z.number().int().optional(),
@@ -87,7 +90,7 @@ Schema:
     { "title": "Market Context", "content": "..." }
   ],
   "priorityActions": [
-    { "priority": "high", "category": "rsu", "action": "...", "rationale": "...", "amountCents": 150000 }
+    { "priority": "high|medium|low", "category": "rebalance|rsu|dca|risk|tax|other", "action": "...", "rationale": "...", "amountCents": 150000 }
   ],
   "marketContext": "Brief current market summary",
   "nextReviewDate": "2026-07-01",
