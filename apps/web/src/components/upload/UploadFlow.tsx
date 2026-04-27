@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { DeGiroUpload } from './DeGiroUpload.js';
 import { MSHoldingsUpload } from './MSHoldingsUpload.js';
 import { RSUGrantUpload } from './RSUGrantUpload.js';
+import { TransactionUpload } from './TransactionUpload.js';
 
-type UploadTab = 'degiro' | 'ms-holdings' | 'rsu-grant';
+type UploadTab = 'degiro' | 'ms-holdings' | 'rsu-grant' | 'transactions';
 
 const TABS: { id: UploadTab; label: string; description: string }[] = [
   {
@@ -20,6 +21,11 @@ const TABS: { id: UploadTab; label: string; description: string }[] = [
     id: 'rsu-grant',
     label: 'Uber RSU Vesting',
     description: 'Upload your RSU grant document (PDF or image)',
+  },
+  {
+    id: 'transactions',
+    label: 'Transaction History',
+    description: 'Import a DeGiro transaction export (.xlsx or .csv)',
   },
 ];
 
@@ -63,6 +69,7 @@ export function UploadFlow({ onSaved }: Props) {
         {activeTab === 'degiro' && <DeGiroUpload {...(onSaved ? { onSaved } : {})} />}
         {activeTab === 'ms-holdings' && <MSHoldingsUpload {...(onSaved ? { onSaved } : {})} />}
         {activeTab === 'rsu-grant' && <RSUGrantUpload {...(onSaved ? { onSaved } : {})} />}
+        {activeTab === 'transactions' && <TransactionUpload {...(onSaved ? { onSaved } : {})} />}
       </div>
     </div>
   );

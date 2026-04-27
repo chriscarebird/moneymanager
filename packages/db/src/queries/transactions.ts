@@ -33,6 +33,45 @@ export async function getTransactionHistory(
   }));
 }
 
+export interface BulkTransactionRow {
+  date: string;
+  action: 'buy' | 'sell';
+  asset: string;
+  isin: string;
+  quantity: number;
+  priceCents: number;
+  feeCents: number;
+  exchange: string;
+}
+
+/**
+ * Bulk-insert transaction rows, skipping duplicates (same date+isin+quantity).
+ * Returns the number of rows actually inserted.
+ */
+export async function bulkInsertTransactions(
+  client: Client,
+  userId: string,
+  rows: BulkTransactionRow[],
+): Promise<number> {
+  let inserted = 0;
+  for (const tx of rows) {
+    const id = `${userId}-${tx.date}-${tx.isin}-${tx.quantity}-${Math.random().toString(36).slice(2, 8)}`;
+    try {
+      await client.execute({
+        sql: `
+          INSERT INTO transaction_history (id, user_id, date, action, asset, isin, quantity, price_cents, fee_cents, exchange)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        args: [id, userId, tx.date, tx.action, tx.asset, tx.isin, tx.quantity, tx.priceCents, tx.feeCents, tx.exchange],
+      });
+      inserted++;
+    } catch {
+      // skip duplicate constraint violations silently
+    }
+  }
+  return inserted;
+}
+
 /**
  * Insert a transaction record.
  */

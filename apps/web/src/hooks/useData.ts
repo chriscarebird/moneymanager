@@ -12,6 +12,7 @@ import {
   type TransactionHistory,
   type MSSnapshotHistoryPoint,
   type VestingEventRow,
+  type EtfSectorRow,
 } from '../lib/api.js';
 
 type AsyncState<T> = { data: T | null; loading: boolean; error: string | null };
@@ -81,6 +82,10 @@ export function useMSSnapshotHistory() {
 
 export function useVestingEvents(grantId: string) {
   return useAsync<VestingEventRow[]>(() => api.getVestingEvents(grantId), [grantId]);
+}
+
+export function useEtfSectors() {
+  return useAsync<EtfSectorRow[]>(() => api.getEtfSectors());
 }
 
 /** Polls live market prices every 5 minutes. Pass null to skip. */

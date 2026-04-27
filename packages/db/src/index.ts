@@ -29,7 +29,10 @@ export {
   insertSnapshot,
   getSnapshotValueHistory,
 } from './queries/portfolio.js';
-export { getTransactionHistory, insertTransaction } from './queries/transactions.js';
+export { getTransactionHistory, insertTransaction, bulkInsertTransactions } from './queries/transactions.js';
+export type { BulkTransactionRow } from './queries/transactions.js';
+export { getEtfSectors, upsertEtfSector } from './queries/etfSectors.js';
+export type { EtfSectorRow } from './queries/etfSectors.js';
 export { getDeGiroEtfScores } from './queries/etfList.js';
 export { getUberEquity, getRSUGrants, upsertUberEquity, upsertRSUGrant } from './queries/uber.js';
 export {

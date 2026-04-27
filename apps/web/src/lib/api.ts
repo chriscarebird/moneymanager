@@ -125,6 +125,26 @@ export type TransactionHistory = {
   exchange: string;
 };
 
+export type ParsedTransaction = {
+  date: string;
+  action: 'buy' | 'sell';
+  asset: string;
+  isin: string;
+  quantity: number;
+  priceCents: number;
+  feeCents: number;
+  exchange: string;
+};
+
+export type EtfSectorRow = {
+  isin: string;
+  ticker: string;
+  isBond: boolean;
+  sectors: Record<string, number>;
+  source: string;
+  updatedAt: string;
+};
+
 export type SnapshotHistoryPoint = {
   date: string;
   totalValueCents: number;
@@ -310,4 +330,28 @@ export const api = {
   sendTestPush: () => apiFetch<{ sent: boolean }>('/api/notifications/test', { method: 'POST', body: '{}' }),
   runScheduler: () => apiFetch<{ scheduled: string[]; pushed: string[]; skipped: string[] }>('/api/notifications/scheduler/run', { method: 'POST', body: '{}' }),
   getPendingNotifications: () => apiFetch<unknown[]>('/api/notifications/pending'),
+
+  // ── Transaction import ────────────────────────────────────────────────────
+
+  parseTransactionFile: (fileBase64: string, fileName: string) =>
+    apiFetch<{ rows: ParsedTransaction[]; skipped: number }>('/api/uploads/transactions', {
+      method: 'POST',
+      body: JSON.stringify({ fileBase64, fileName }),
+    }),
+
+  bulkSaveTransactions: (transactions: ParsedTransaction[]) =>
+    apiFetch<{ inserted: number }>('/api/portfolio/transactions/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ transactions }),
+    }),
+
+  // ── Sector data ───────────────────────────────────────────────────────────
+
+  getEtfSectors: () => apiFetch<EtfSectorRow[]>('/api/portfolio/sectors'),
+
+  refreshSectors: (isins: string[]) =>
+    apiFetch<{ updated: number }>('/api/portfolio/sectors/refresh', {
+      method: 'POST',
+      body: JSON.stringify({ isins }),
+    }),
 };

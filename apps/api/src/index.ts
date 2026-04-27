@@ -14,6 +14,7 @@ import { transfersRoutes } from './routes/transfers.js';
 import { tradingWindowsRoutes } from './routes/tradingWindows.js';
 import { marketRoutes } from './routes/market.js';
 import { exportRoutes } from './routes/export.js';
+import { txUploadRoutes, txBulkRoutes, sectorRoutes } from './routes/transactionImport.js';
 import { runSchedulerForAllUsers } from './services/notificationScheduler.js';
 import type { AppVariables } from './types.js';
 
@@ -79,6 +80,9 @@ app.route('/api/transfers', transfersRoutes);
 app.route('/api/trading-windows', tradingWindowsRoutes);
 app.route('/api/market', marketRoutes);
 app.route('/api/export', exportRoutes);
+app.route('/api/uploads', txUploadRoutes);
+app.route('/api/portfolio/transactions', txBulkRoutes);
+app.route('/api/portfolio/sectors', sectorRoutes);
 
 // ── Serve web SPA static files in production ─────────────────────────────────
 // In Docker, apps/web/dist is copied alongside the API at ../web/dist
