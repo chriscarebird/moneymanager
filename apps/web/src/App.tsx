@@ -222,6 +222,7 @@ function AppShell({ userId, onLogout }: { userId: string; onLogout: () => void }
               onVestingUpdated={grants.refetch}
               tradingWindow={tradingWindow.data ?? null}
               onWindowSaved={() => { tradingWindow.refetch(); refetchAll(); }}
+              uberPriceUsdCents={livePrices.data?.uberUsdCents ?? null}
             />
           </div>
         )}

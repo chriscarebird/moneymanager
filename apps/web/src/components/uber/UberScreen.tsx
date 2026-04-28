@@ -10,10 +10,11 @@ type Props = {
   onVestingUpdated: () => void;
   tradingWindow: TradingWindow | null;
   onWindowSaved: () => void;
+  uberPriceUsdCents: number | null;
 };
 
 export function UberScreen({
-  equity, grants, msHistory, loading, onVestingUpdated, tradingWindow, onWindowSaved,
+  equity, grants, msHistory, loading, onVestingUpdated, tradingWindow, onWindowSaved, uberPriceUsdCents,
 }: Props) {
   return (
     <div className="space-y-4 pb-6">
@@ -23,6 +24,7 @@ export function UberScreen({
         msHistory={msHistory}
         loading={loading}
         onVestingUpdated={onVestingUpdated}
+        uberPriceUsdCents={uberPriceUsdCents}
       />
       <TradingWindowFlow window={tradingWindow} onWindowSaved={onWindowSaved} />
     </div>

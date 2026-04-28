@@ -5,6 +5,7 @@ type Props = {
   grantId: string;
   events: VestingEventRow[];
   onUpdated: () => void;
+  livePriceUsdCents: number | null;
 };
 
 function formatUsdCents(cents: number): string {
@@ -32,7 +33,7 @@ function isPast(dateStr: string): boolean {
   return new Date(dateStr) < new Date();
 }
 
-export function VestingEventTable({ grantId, events, onUpdated }: Props) {
+export function VestingEventTable({ grantId, events, onUpdated, livePriceUsdCents }: Props) {
   const [editingTax, setEditingTax] = useState<EditingTax | null>(null);
   const [markForm, setMarkForm] = useState<MarkVestedForm | null>(null);
   const [saving, setSaving] = useState(false);
@@ -113,8 +114,8 @@ export function VestingEventTable({ grantId, events, onUpdated }: Props) {
       ev.status === 'vested' && ev.actualSharesReceived !== null
         ? ev.actualSharesReceived
         : predictedNetShares(ev.sharesVesting, ev.incomeTaxRate);
-    const gross =
-      ev.priceUsdCents !== null ? predictedGross(ev.sharesVesting, ev.priceUsdCents) : null;
+    const priceToUse = ev.priceUsdCents ?? livePriceUsdCents;
+    const gross = priceToUse !== null ? predictedGross(ev.sharesVesting, priceToUse) : null;
     const netValue = gross !== null ? gross - Math.round(gross * ev.incomeTaxRate) : null;
     const isEditing = editingTax?.eventId === ev.id;
     const isMarking = markForm?.eventId === ev.id;
